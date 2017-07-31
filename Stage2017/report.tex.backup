@@ -32,7 +32,13 @@
 \def\RRpos {{\mathbb R_{\geq 0}}}
 \def\RRposi {{\mathbb R_{\geq 0}^{\infty}}}
 
+
+\definecolor{temp}{rgb}{0.8,0.4,0}
+\definecolor{purple}{rgb}{0.8, 0, 0.8}
 \newcommand\todo[1]{{\color{red}\textbf{[TO DO:  #1]}}}
+\newcommand\idea[1]{{\color{purple}\textbf{[IDEA:  #1]}}}
+\newcommand\temp[1]{{\color{temp} #1}}
+
 
 \begin{document}
 
@@ -51,7 +57,7 @@
   %\textsc{\Large Parcours Recherche et Innovation}\\[3.5cm]
   
   
-  \textnormal{\LARGE Possibility Distribution Semantics for Probabilistic Programs}\\[2cm]
+  \textnormal{\LARGE Possibility Distribution Semantics for Probabilistic Programs with Nondeterminism}\\[2cm]
   
   \textnormal{Intern: Joshua Peignier}\\
   \textnormal{Supervisors: Benjamin Kaminski, Christoph Matheja}\\
@@ -72,31 +78,50 @@ In contrast to ordinary programs, probabilistic programs compute a probability d
 
 \section{Introduction}
 \label{sec:intro}
-Probabilistic programs are a particular class of programs, in which probabilistic choices are involved. Probabilistic choice consist of an instruction of the form $S_1 [p] S_2$, where a program coming to this instruction has a probability $p$ of executing $S_1$ and a probability $1-p$ of executing $S_2$. For example, the simple program $\{ x := 2 \} [\frac{1}{3}] \{ x := 5 \}$ is a program that has a probability $\frac{1}{3}$ of setting the program variable $x$ to $2$, and a probability $\frac{2}{3}$ of setting $x$ to $5$. These program are particular, in so far as they are not deterministic, which means that executing such a program with always the same input will not always result in the same output. Though they seem more complex than deterministic programs, probabilistic programs are useful in many ways. For example, it is simpler to solve some problems with probabilistic programs than with deterministic ones, as we can build probabilistic programs which have a better average complexity than deterministic programs (sometimes with the cost of a small probability of error). Classical examples of such programs are the quicksort algorithm, the Miller-Rabin primality test, or the Solovay-Strassen primality test. There also exists probabilistic algorithms to solve the leader election problem. \todo{Find a name for the latter example}\newline 
-Besides probabilistic choice, there exists a frequently used concept in nondeterministic programs, called nondeterministic choice. The program $\{ x := 2 \} [\!] \{ x := 5 \}$ uses this concept. In this example, the program will set $x$ nondeterministically to $2$, or to $5$, but we cannot give a probability to any of these choices. More precisely, it makes no sense to give them a probability. The nondeterministic choice is used in some programs where the outcomes of a choice are known, but where the mecanism behind the choices is either unknown, or uses an overly complex probability distributions. This instruction is used, for instance, in the model-checker Spin, to model the unpredictable behavior of a program where several choices are possible.\newline
-However, several major problems arise with the use of nondeterministic choice, the first one being the definition of proper semantics for this instruction. For instance, when trying to define predicate transformer semantics (i.e. when trying to define a program $P$ as a predicate transformer $T$ in the sense of Dijkstra, in \cite{Dijkstra76}, which transforms a given postcondition $\varphi$ into the corresponding weakest-postcondition $T(\varphi)$ such that the Hoare triple $\{T(\varphi)\}P\{\varphi\}$ is valid), several possible visions of the nondeterministic choices exist. The authors in \cite{McIver05,WuChen11} defined a weakest-precondition calculus on languages inspired from the pGCL language (an extended version of the Guarded Command Language from Dijkstra, including both type of choices mentioned above), where they consider that, for a program of the form $S_1 [\!] S_2$ and a postcondition $E$, the corresponding weakest precondition is considered as a minimum (or intersection) of the weakest preconditions of $E$ in $S_1$ and $S_2$, contrary to the work presented in \cite{WuChen08,WuChen12}, where the authors considered the same problem and defined the weakest precondition of $E$ in $S_1 [\!] S_2$ as the maximum (or union) of both.\newline
-Another constraining problem is the complication arising from combination of probabilistic and nondeterministic choices in the same program.\todo{Give more details}\newline
-The authors in \cite{WuChen08,WuChen11,WuChen12} attempted to define simpler semantics for fuzzy languages (detailed in \cite{Bueno93,Bueno97}) including the nondeterministic choice, using possibility theory (an alternative concept to probability theory to model uncertainty, detailed in \cite{Agarwal15,Shapiro09}). However, in none of their publications did they consider languages including probabilistic choice, as probabilities and possibilities are hard to combine. The authors in \cite{McIver05} tried to define a predicate transformer semantics for the pGCL language, including both type of choices, but got complicated semantics, where the weakest precondition we can deduce have harsh expressions.\newline
-In this report, our goal is to give our own semantics of languages including both type of choices, and more precisely an expected value semantics (which can be derived from predicate transformer semantics), where we consider expected values of fuzzy random variables (first defined in \cite{PuriRal86}, and then simplified in \cite{Shapiro09}). It is a way to combine the work in \cite{WuChen08,WuChen11,WuChen12} using possibility theory with the languages presented in \cite{McIver05}.\newline
-\todo{Insert a quick summary here, reminding what to find in each section}
+Probabilistic programs are a particular class of programs, in which probabilistic choices are involved. Probabilistic choice consist of an instruction of the form $\{S_1\} [p] \{S_2\}$, where a program coming to this instruction has a probability $p$ of executing $S_1$ and a probability $1-p$ of executing $S_2$. For example, the simple program $\{ x := 2 \} [\frac{1}{3}] \{ x := 5 \}$ is a program that has a probability $\frac{1}{3}$ of setting the program variable $x$ to $2$, and a probability $\frac{2}{3}$ of setting $x$ to $5$. What makes this kind of program different from classical deterministic programs is that executing such a program with always the same input will not always result in the same output. Though they seem more complex than deterministic programs, probabilistic programs are useful in many ways. For example, it is simpler to solve some problems with probabilistic programs than with deterministic ones, as we can build probabilistic programs which have a better average complexity than deterministic programs (sometimes at the cost of a small probability of error). Classical examples of such programs are the quicksort algorithm, or primality tests, such as the Miller-Rabin test and the Solovay-Strassen test (for positive numbers), or the Berlekamp test (for polynomials). There also exists probabilistic algorithms to solve the leader election problem.\newline 
+Besides probabilistic choice, there exists a frequently used concept in nondeterministic programs, called nondeterministic choice. One example is the following program: $\{ x := 2 \} [\!] \{ x := 5 \}$. In this example, the program will set $x$ nondeterministically to $2$, or to $5$, but we cannot assign a probability to any of these choices. More precisely, it makes no sense to assign them a probability. The nondeterministic choice is used in some programs where the outcomes of a choice are known, but making the mecanism behind the choices is either unknown, or uses overly complex probability distributions. \todo{Find a source} This instruction is used, for instance, in the model-checker Spin, to model the unpredictable behavior of a program where several choices are possible.\newline
+\idea{Merge sections 1 and 2. And here, explain Hoare triples, Dijkstra's view of predicate transformers, etc...}
+However, two major problems arise with the use of nondeterministic choice: defining proper semantics for this instruction, and the complication arising from combination of probabilistic and nondeterministic choices in the same program.\todo{Give more details}\newline
 
-\section{Context and Motivation}
-\label{sec:context}
-In this whole section, we will consider the pGCL language, presented in \cite{McIver05}, and defined by the following grammar\footnote{The original pGCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while} (\texttt{true})\{ \texttt{skip} \}$}:
+In this whole report, we will primarly consider the pGCL language, presented in \cite{McIver05}, and defined by the following grammar\footnote{The original pGCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while} (\texttt{true})\{ \texttt{skip} \}$}:
+
 
 \begin{align*}
- S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S \,|\, S [p] S \,|\, S [\!] S \,|\ \\
+ S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S \,|\, \{S\} [p] \{S\} \,|\, \{S\} [\!] \{S\} \,|\ \\
  & \texttt{ if } (b) \texttt{ then } \{ S \} \texttt{ else } \{ S \} \,|\, \texttt{ while }(b) \texttt{ do }\{S\} \\
 \end{align*}
 
-This language is sufficient to describe any probabilistic or nondeterministic program. The \texttt{if\dots then \dots else} and \texttt{while} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if\dots then \dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. We take interest primarly in the two remaining instructions.\newline
-The $S_1 [p] S_2$ instruction models the fact that there is a probability $p$ that $S_1$ is executed, and a probability $1-p$ that $S_2$ is executed. Finally, the $S_1 [\!] S_2 $ (first introduced by Dijkstra in \cite{Dijkstra76}) is a statement that will nondeterministically execute either $S_1$ or $S_2$. The difference with the probabilistic choice is that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $S_1 [\!] S_2 $ is executed a large number of times, no pattern will appear, whereas the execution of $S_1 [p] S_2$ a large number of times will tend to have a proportion $p$ of cases where $S_1$ is executed, and a proportion $1-p$ of cases where $S_2$ is executed.\newline
-Note that we are using choice instructions with only two choices, but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using the loop) of outcomes.\newline
+This language is sufficient to describe any probabilistic or nondeterministic program. The \texttt{if \dots then \dots else} and \texttt{while} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if \dots then \dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. We take interest primarly in the two remaining instructions.\newline
+The $\{S_1\} [p] \{S_2\}$ instruction models the fact that there is a probability $p$ that $S_1$ is executed, and a probability $1-p$ that $S_2$ is executed. Finally, the $\{S_1\} [\!] \{S_2\} $ (first introduced by Dijkstra in \cite{Dijkstra76}) is a statement that will nondeterministically execute either $S_1$ or $S_2$. The difference with the probabilistic choice is that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $\{S_1\} [\!] \{S_2\} $ is executed a large number of times, no clear pattern should appear, whereas the execution of $S_1 [p] S_2$ a large number of times will tend to have a proportion $p$ of cases where $S_1$ is executed, and a proportion $1-p$ of cases where $S_2$ is executed.\newline
+Note that we are using choice instructions with only two choices, but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using the loop) of outcomes.\bigskip
+
+We now quickly explain Hoare triples for deterministic program, and will extend them to nondeterminstic programs. A Hoare triple is a triple of the form $\{\psi\}P\{\varphi\}$
+
+\temp{
+For instance, when trying to define predicate transformer semantics (i.e. when trying to define a program $P$ as a predicate transformer $T$ in the sense of Dijkstra, in \cite{Dijkstra76}, which transforms a given postcondition $\varphi$ into the corresponding weakest-postcondition $T(\varphi)$ such that the Hoare triple $\{T(\varphi)\}P\{\varphi\}$ is valid), several possible visions of the nondeterministic choices exist. The authors in \cite{McIver05,WuChen11} defined a weakest-precondition calculus on languages inspired from the pGCL language (an extended version of the Guarded Command Language from Dijkstra, including both type of choices mentioned above), where they consider that, for a program of the form $S_1 [\!] S_2$ and a postcondition $E$, the corresponding weakest precondition is considered as a minimum (or intersection) of the weakest preconditions of $E$ in $S_1$ and $S_2$, contrary to the work presented in \cite{WuChen08,WuChen12}, where the authors considered the same problem and defined the weakest precondition of $E$ in $S_1 [\!] S_2$ as the maximum (or union) of both.\newline
+The authors in \cite{WuChen08,WuChen11,WuChen12} attempted to define simpler semantics for fuzzy languages (detailed in \cite{Bueno93,Bueno97}) including the nondeterministic choice, using possibility theory (an alternative concept to probability theory to model uncertainty, detailed in \cite{Agarwal15,Shapiro09}). However, in none of their publications did they consider languages including probabilistic choice, as probabilities and possibilities are hard to combine. The authors in \cite{McIver05} tried to define a predicate transformer semantics for the pGCL language, including both type of choices, but got complicated semantics, where the weakest precondition we can deduce have harsh expressions.\newline
+In this report, our goal is to give our own semantics of languages including both type of choices, and more precisely an expected value semantics (which can be derived from predicate transformer semantics), where we consider expected values of fuzzy random variables (first defined in \cite{PuriRal86}, and then simplified in \cite{Shapiro09}). It is a way to combine the work in \cite{WuChen08,WuChen11,WuChen12} using possibility theory with the languages presented in \cite{McIver05}.\newline
+\todo{Insert a quick organisation of the report here, reminding what to find in each section}
+}
+
+\section{Context and Motivation}
+\label{sec:context}
+\temp{
+% In this whole section, we will consider the pGCL language, presented in \cite{McIver05}, and defined by the following grammar\footnote{The original pGCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while} (\texttt{true})\{ \texttt{skip} \}$}:
+% 
+% \begin{align*}
+%  S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S \,|\, S [p] S \,|\, S [\!] S \,|\ \\
+%  & \texttt{ if } (b) \texttt{ then } \{ S \} \texttt{ else } \{ S \} \,|\, \texttt{ while }(b) \texttt{ do }\{S\} \\
+% \end{align*}
+% 
+% This language is sufficient to describe any probabilistic or nondeterministic program. The \texttt{if\dots then \dots else} and \texttt{while} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if\dots then \dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. We take interest primarly in the two remaining instructions.\newline
+% The $S_1 [p] S_2$ instruction models the fact that there is a probability $p$ that $S_1$ is executed, and a probability $1-p$ that $S_2$ is executed. Finally, the $S_1 [\!] S_2 $ (first introduced by Dijkstra in \cite{Dijkstra76}) is a statement that will nondeterministically execute either $S_1$ or $S_2$. The difference with the probabilistic choice is that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $S_1 [\!] S_2 $ is executed a large number of times, no pattern will appear, whereas the execution of $S_1 [p] S_2$ a large number of times will tend to have a proportion $p$ of cases where $S_1$ is executed, and a proportion $1-p$ of cases where $S_2$ is executed.\newline
+% Note that we are using choice instructions with only two choices, but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using the loop) of outcomes.\newline
 
 Contrary to the probabilistic choice, which is used in several algorithms in order to solve a given problem with a better average complexity than deterministic algorithms, the nondeterministic choice seems to be of little interest and looks like an unnecessary complication. But this operator managed to find its way in many publications which took interest in it (\cite{WuChen08,WuChen11,WuChen12,McIver05}), as it can be used in some situations, where a choice has to be made, where the outcomes of the choice are known, but where the mecanism hiding behind the choice is unknown (in this case, we are unable to assign probabilities), or where the mecanism uses an overly complex probability distribution.\todo{example of unknown or too complex mecanism}.\newline
 
 Now, we consider the following pGCL program $P$: $\{ x := 2 [\!] x := 5 \} [p] \{ x := 7 \}$ (with $p \in ]0,1[$). \todo{apply the semantics of each paper to P to show the problem}
-
+}
 \section{Related Work}
 \label{sec:related}
 
@@ -129,26 +154,26 @@ Concretely, if $X$ is a FRV (i.e. an application mapping each state $\sigma$ to 
 For instance, if we consider a program variable $x$, then the FRV $\underline{x}$ maps each state $\sigma$ to the set $\{x_\sigma\}$. Our goal is that the FRV $\underline{x}$ is transformed by $ev[S]$ into the FRV $ev[S](\underline{x})$, which maps each $\sigma$ to the set $ev[S](\underline{x})(\sigma)$ of possible values of the variable $x$ after executing $S$ in the state $\sigma$. Therefore, we can say that $ev[S](\underline{x})(\sigma)$ is the \emph{expected value} (or rather \emph{set of possible expected values}) of the FRV $\underline{x}$ after executing $S$ in the state $\sigma$; or, with other words, the set of possible expected values of the program variable $x$ after executing $S$ in $\sigma$.\newline
 
 
-We give rules in Table \ref{table:rules_ev} of a predicate-transformer-style calculus for the computation of expected values. Let $S$ be a program, $f$ a FRV capturing the computation of the expected value.\newline
+We give rules in Table \ref{table:rules_ev} of a predicate-transformer-style calculus for the computation of expected values.\newline
 \begin{table}
 \begin{center}
 \begin{tabular}{|p{3cm}|p{9cm}|}
  \hline
- \thead{$S$} & \thead{$ev[S](f)$} \\
+ \thead{$S$} & \thead{$ev[S](X)$} \\
  \hline
- \thead{\texttt{skip}} & \thead{$f$} \\
+ \thead{\texttt{skip}} & \thead{$X$} \\
  \hline
- \thead{$x := A$} & \thead{$\lambda\sigma.f(\sigma[x/A])$} \\
+ \thead{$y := A$} & \thead{$\lambda\sigma.X(\sigma[y/A])$} \\
  \hline
- \thead{$S_1 ; S_2$} & \thead{$ev[S_1](ev[S_2](f))$} \\
+ \thead{$S_1 ; S_2$} & \thead{$ev[S_1](ev[S_2](X))$} \\
  \hline
- \thead{$S_1 [p] S_2$} & \thead{$\lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \}$} \\
+ \thead{$S_1 [p] S_2$} & \thead{$\lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in ev[S_2](X)(\sigma) \}$} \\
  \hline
- \thead{$S_1 [\!] S_2$} & \thead{$\lambda\sigma. ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma)$} \\
+ \thead{$S_1 [\!] S_2$} & \thead{$\lambda\sigma. ev[S_1](X)(\sigma) \cup ev[S_2](X)(\sigma)$} \\
  \hline
- \thead{$\texttt{if } (b) \texttt{ then } \{ S_1 \}$ \\ $\texttt{ else } \{ S_2 \}$} & \thead{$\lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$ \\$t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \}$} \\
+ \thead{$\texttt{if } (b) \texttt{ then } \{ S_1 \}$ \\ $\texttt{ else } \{ S_2 \}$} & \thead{$\lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$ \\$t_1 \in ev[S_1](X)(\sigma), t_2 \in ev[S_2](X)(\sigma) \}$} \\
  \hline
- \thead{$\texttt{while }(b) \texttt{ do }\{S\}$} & \thead{lfp ($\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$\\$t_1 \in ev[S](X)(\sigma), t_2 \in f(\sigma) \}$))} \\
+ \thead{$\texttt{while }(b) \texttt{ do }\{S\}$} & \thead{lfp ($\lambda Y. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$\\$t_1 \in ev[S](Y)(\sigma), t_2 \in X(\sigma) \}$))} \\
  \hline
 \end{tabular}
 \end{center}
@@ -156,11 +181,31 @@ We give rules in Table \ref{table:rules_ev} of a predicate-transformer-style cal
 \caption{Rules for defining the FRV transformer $ev$}
 \end{table}
 
-Consider the guideline example $P$: $\{ x := 2 [\!] x := 5 \} [p] \{ x := 7 \}$. We want to compute the expected value of $x$ after the execution of $P$. Thus, we have to determin $ev[P](\underline{x})$,which will map each state $\sigma$ to the expected value of $x$ after executing $P$ in $\sigma$. It is a function of $\sigma$, but the form of $P$ gives the intuition that it will be a constant function, not depending on $\sigma$.\newline
-With the rules presented in Table \ref{table:rules_ev}, we can see that this requires to compute first the functions $ev[x := 2](\underline{x})$, $ev[x := 5](\underline{x})$ and $ev[x := 7](\underline{x})$. We get that $ev[x := 2](\underline{x}) = \lambda\sigma.\underline{x}(\sigma[x/2]) = \lambda\sigma.\{x_{\sigma[x/2]}\} = \lambda\sigma.\{2\}$. (Because the value of $x$ in $\sigma[x/2]$ is necessarily $2$. Recall that $\sigma[x/2]$ is the state obtained after setting $x$ to $2$ in the state $\sigma$.) By the same computation, we get $ev[x := 5](\underline{x}) = \lambda\sigma.\{5\}$ and $ev[x := 7](\underline{x}) = \lambda\sigma.\{7\}$.
+Consider the guideline example $P$: $\{ x := 2 [\!] x := 5 \} [p] \{ x := 7 \}$. We want to compute the expected value of $x$ after the execution of $P$. Thus, we have to determine $ev[P](\underline{x})$,which will map each state $\sigma$ to the expected value of $x$ after executing $P$ in $\sigma$. It is a function of $\sigma$, but the form of $P$ gives the intuition that it will be a constant function, not depending on $\sigma$.\newline
+With the rules presented in Table \ref{table:rules_ev}, we can see that this requires first to compute the functions $ev[x := 2 [\!] x := 5](\underline{x})$ and $ev[x := 7](\underline{x})$; besides, the former requires to compute $ev[x := 2](\underline{x})$, $ev[x := 5](\underline{x})$.\newline
+
+We get that:
+$$ev[x := 2](\underline{x}) = \lambda\sigma.\underline{x}(\sigma[x/2]) = \lambda\sigma.\{x_{\sigma[x/2]}\} = \lambda\sigma.\{2\}$$ 
+Indeed, the value of $x$ in $\sigma[x/2]$ is necessarily $2$. Recall that $\sigma[x/2]$ is the state obtained after setting $x$ to $2$ in the state $\sigma$. This means that the expected value of $x$ after executing $x := 2$ in any state $\sigma$ can only be $2$. By the same computation, we get $ev[x := 5](\underline{x}) = \lambda\sigma.\{5\}$ and $ev[x := 7](\underline{x}) = \lambda\sigma.\{7\}$.\newline
+
+Now, we can compute that:
+\begin{align*}
+ev[x := 2 [\!] x := 5](\underline{x}) &= \lambda\sigma. ev[x := 2](\underline{x})(\sigma) \cup ev[x := 5](\underline{x})(\sigma) \\
+&= \lambda\sigma. \{2\} \cup \{5\} = \lambda\sigma.\{2,5\} 
+\end{align*}
+This means that the possible expected values of $x$ after executing $x := 2 [\!] x := 5$ in any state $\sigma$ are $2$ and $5$.\newline
+
+Finally, 
+\begin{align*}
+ev[P](\underline{x}) &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[x := 2 [\!] x := 5](\underline{x})(\sigma), t_2 \in ev[x := 7](\underline{x})(\sigma) \} \\
+&= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in \{2,5\}, t_2 \in \{7\} \} \\
+&= \lambda\sigma. \{2p+7(1-p),5p+7(1-p) \} 
+\end{align*}
+
 
 
 \section{Conclusion}
+\todo{Explain that, for a program $S$, by considering each of its variables $x$ and computing $ev[S](\underline{x})$, we are able to fully characterize the program $S$ and get an understanding of what it does. Explain that it is clearer than what was done before.}
 \label{sec:conclusion}
 
 
