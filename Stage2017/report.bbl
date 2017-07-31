@@ -1,0 +1,47 @@
+\begin{thebibliography}{10}
+
+\bibitem{Agarwal15}
+Parul Agarwal and H.S. Nayal.
+\newblock {\em Possibility Theory versus Probability Theory in Fuzzy Measure
+  Theory}.
+
+\bibitem{WuChen08}
+Yixiang Chen and Hengyang Wu.
+\newblock {\em Domain Semantics of Possibility Computations}.
+
+\bibitem{Dijkstra76}
+E.W. Dijkstra.
+\newblock {\em A Discipline of Programming}.
+
+\bibitem{McIver05}
+Annabelle McIver and Carroll Morgan.
+\newblock {\em Abstration, Refinement and Proof for Probabilistic Systems}.
+
+\bibitem{Bueno93}
+Rafael Morales-Bueno, Ricardo Conejo, José~Luis Pérez de~la Cruz, and
+  Buenaventura Clares.
+\newblock {\em An elementary fuzzy programming language}.
+
+\bibitem{Bueno97}
+Rafael Morales-Bueno, José~Luis Pérez de~la Cruz, Ricardo Conejo, and
+  Buenaventura Clares.
+\newblock {\em A family of fuzzy programming languages}.
+
+\bibitem{PuriRal86}
+Madan~L. Puri and Dan~A. Ralescu.
+\newblock {\em Fuzzy Random Variables}.
+
+\bibitem{Shapiro09}
+Arnold~F. Shapiro.
+\newblock {\em Fuzzy Random Variables}.
+
+\bibitem{WuChen12}
+Hengyang Wu and Yixiang Chen.
+\newblock {\em Semantics of Non–Deterministic Possibility Computation}.
+
+\bibitem{WuChen11}
+Hengyang Wu and Yixiang Chen.
+\newblock {\em The Semantics of wlp and slp of Fuzzy Imperative Programming
+  Languages}.
+
+\end{thebibliography}
