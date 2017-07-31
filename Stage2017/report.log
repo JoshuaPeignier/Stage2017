@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2016.6.21)  28 JUL 2017 15:17
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2016.6.21)  31 JUL 2017 09:21
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -743,11 +743,11 @@ Overfull \hbox (18.28752pt too wide) in paragraph at lines 178--178
 Here is how much of TeX's memory you used:
  3724 strings out of 494878
  45155 string characters out of 6177569
- 117718 words of memory out of 5000000
+ 118718 words of memory out of 5000000
  6935 multiletter control sequences out of 15000+600000
  21089 words of font info for 54 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 38i,23n,26p,1388b,404s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 38i,23n,26p,1410b,404s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/joshua/.texmf-var/fonts/pk/ljfour/jk
 nappen/ec/ecti0900.600pk> </home/joshua/.texmf-var/fonts/pk/ljfour/jknappen/ec/
 ecti1000.600pk> </home/joshua/.texmf-var/fonts/pk/ljfour/jknappen/ec/ectt0900.6
@@ -771,9 +771,9 @@ b></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></us
 r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share
 /texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/texliv
 e/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on report.pdf (7 pages, 510827 bytes).
+Output written on report.pdf (7 pages, 512451 bytes).
 PDF statistics:
- 523 PDF objects out of 1000 (max. 8388607)
+ 527 PDF objects out of 1000 (max. 8388607)
  108 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  16 words of extra memory for PDF output out of 10000 (max. 10000000)
