@@ -4,44 +4,85 @@
 Parul Agarwal and H.S. Nayal.
 \newblock {\em Possibility Theory versus Probability Theory in Fuzzy Measure
   Theory}.
+\newblock 2015.
+
+\bibitem{Berlekamp67}
+Elwyn~R. Berlekamp.
+\newblock {\em Factoring Polynomials Over Finite Fields}.
+\newblock 1967.
 
 \bibitem{WuChen08}
 Yixiang Chen and Hengyang Wu.
 \newblock {\em Domain Semantics of Possibility Computations}.
+\newblock 2008.
 
 \bibitem{Dijkstra76}
 E.W. Dijkstra.
 \newblock {\em A Discipline of Programming}.
+\newblock 1976.
+
+\bibitem{Freivalds77}
+R.~Freivalds.
+\newblock {\em Probabilistic Machines Can Use Less Running Time}.
+\newblock 1977.
+
+\bibitem{Hoare61}
+C.A.R. Hoare.
+\newblock {\em Algorithm 64: Quicksort}.
+\newblock 1961.
 
 \bibitem{McIver05}
 Annabelle McIver and Carroll Morgan.
 \newblock {\em Abstration, Refinement and Proof for Probabilistic Systems}.
+\newblock 2005.
 
 \bibitem{Bueno93}
 Rafael Morales-Bueno, Ricardo Conejo, José~Luis Pérez de~la Cruz, and
   Buenaventura Clares.
 \newblock {\em An elementary fuzzy programming language}.
+\newblock 1993.
 
 \bibitem{Bueno97}
 Rafael Morales-Bueno, José~Luis Pérez de~la Cruz, Ricardo Conejo, and
   Buenaventura Clares.
 \newblock {\em A family of fuzzy programming languages}.
+\newblock 1997.
 
 \bibitem{PuriRal86}
 Madan~L. Puri and Dan~A. Ralescu.
 \newblock {\em Fuzzy Random Variables}.
+\newblock 1986.
+
+\bibitem{Rabin77}
+Michael~O. Rabin.
+\newblock {\em Probabilistic Algorithm for Testing Primality}.
+\newblock 1977.
+
+\bibitem{Ramanathan04}
+Murali~Krishna Ramanathan, Ronaldo~A. Ferreira, Suresh Jagannathan, and
+  Ananth~Y. Grama.
+\newblock {\em Randomized Leader Election}.
+\newblock 2004.
 
 \bibitem{Shapiro09}
 Arnold~F. Shapiro.
 \newblock {\em Fuzzy Random Variables}.
+\newblock 2009.
 
-\bibitem{WuChen12}
-Hengyang Wu and Yixiang Chen.
-\newblock {\em Semantics of Non–Deterministic Possibility Computation}.
+\bibitem{SolovayStrassen77}
+Robert.M Solovay and Volker Strassen.
+\newblock {\em A fast Monte-Carlo test for primality}.
+\newblock 1977.
 
 \bibitem{WuChen11}
 Hengyang Wu and Yixiang Chen.
 \newblock {\em The Semantics of wlp and slp of Fuzzy Imperative Programming
   Languages}.
+\newblock 2011.
+
+\bibitem{WuChen12}
+Hengyang Wu and Yixiang Chen.
+\newblock {\em Semantics of Non–Deterministic Possibility Computation}.
+\newblock 2012.
 
 \end{thebibliography}

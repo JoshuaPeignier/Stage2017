@@ -8,11 +8,13 @@
 \usepackage{cite}
 \usepackage{color}
 \usepackage{makecell}
+\usepackage{caption}
 %\usepackage{amsthm}
-%opening
+%openin
 \title{}
 \author{}
 
+\pagestyle{plain}
 % \newtheorem{definition}{Definition}
 % \newtheorem{proposition}{Proposition}
 % \newtheorem{corollary}{Corollary}
@@ -31,17 +33,17 @@
 \def\ZZ {{\mathbb Z}}
 \def\RRpos {{\mathbb R_{\geq 0}}}
 \def\RRposi {{\mathbb R_{\geq 0}^{\infty}}}
-\def\Max {{\textnormal Max}}
-\def\Min {{\textnormal Min}}
-\def\Sup {{\textnormal Sup}}
-\def\Inf {{\textnormal Inf}}
+\def\Max {\textnormal {Max}}
+\def\Min {\textnormal {Min}}
+\def\Sup {\textnormal {Sup}}
+\def\Inf {\textnormal {Inf}}
 
 
 \definecolor{temp}{rgb}{0.8,0.4,0}
 \definecolor{purple}{rgb}{0.8, 0, 0.8}
 \newcommand\todo[1]{{\color{red}\textbf{[TO DO:  #1]}}}
 \newcommand\idea[1]{{\color{purple}\textbf{[IDEA:  #1]}}}
-\newcommand\temp[1]{{\color{temp} #1}}
+\newcommand\notsure[1]{{\color{temp} #1}}
 
 
 \begin{document}
@@ -82,70 +84,262 @@ In contrast to ordinary programs, probabilistic programs compute a probability d
 
 \section{Introduction}
 \label{sec:intro}
-Probabilistic programs are a particular class of programs, in which probabilistic choices are involved. For instance, the simple program $\{ x := 2 \} [\frac{1}{3}] \{ x := 5 \}$ is a program that has a probability $\frac{1}{3}$ of setting the program variable $x$ to $2$, and a probability $\frac{2}{3}$ of setting $x$ to $5$; it is therefore a probabilistic program. What makes this kind of program different from classical deterministic programs is that executing such a program with always the same input will not always result in the same output. Though they seem more complex than deterministic programs, probabilistic programs are useful in many ways. For example, it is simpler to solve some problems with probabilistic programs than with deterministic ones, as we can build probabilistic programs which have a better average complexity than deterministic programs (sometimes at the cost of a small probability of error). Classical examples of such programs are the quicksort algorithm, Freivalds' matrix multiplication, and some primality tests, such as the Miller-Rabin test and the Solovay-Strassen test (for positive numbers), and the Berlekamp test (for polynomials). There also exists probabilistic algorithms to solve the leader election problem. In this whole report, programs containing such choices will be called \emph{probabilistic programs}.\newline 
-Besides probabilistic choice, there exists a frequently used concept in nondeterministic programs, called nondeterministic choice. One example is the following program: $\{ x := 2 \} [\!] \{ x := 5 \}$. In this example, the program will set $x$ nondeterministically to $2$, or to $5$, but we cannot assign a probability to any of these choices. More precisely, it makes no sense to assign them a probability. The nondeterministic choice is used in some programs where the outcomes of a choice are known, but making the mecanism behind the choices is either unknown, or uses overly complex probability distributions. \todo{Find a source} This instruction was first introduced by Dijkstra \cite{Dijkstra76} in the GCL language, and is used, for instance, in the model-checker Spin, to model the unpredictable behavior of a program where several choices are possible. In this whole report, programs containing such choices will be called \emph{nondeterministic programs}. Programs containing both types will be called \emph{probabilistic nondeterministic programs}, whereas programs containing none of them are \emph{deterministic programs}.\bigskip
+Probabilistic programs are programs, in which probabilistic choices are involved. For instance, the simple program $\{ x := 2 \} [\frac{1}{3}] \{ x := 5 \}$ simulates flipping a biased coin (with one outcome having a probability of $\frac{1}{3}$, and the other one $\frac{2}{3}$). One easily notices that, contrary to classical deterministic programs, executing such a program contaning probabilistic choices with the same input will not always result in the same output. In this whole report, programs containing probabilistic choices will be called \emph{probabilistic programs}. Though they seem more complex than deterministic programs, probabilistic programs are useful in many ways. For example, it is simpler to solve some problems with probabilistic programs than with deterministic ones, as we can build probabilistic programs which have a better average complexity than deterministic programs (sometimes at the cost of a small probability of error). Classical examples of such programs are the quicksort algorithm \cite{Hoare61}, Freivalds' matrix multiplication \cite{Freivalds77}, and certain primality tests, such as the Miller-Rabin test \cite{Rabin77} and the Solovay-Strassen test \cite{SolovayStrassen77} (for positive numbers), and the Berlekamp test (for polynomials) \cite{Berlekamp67}. There also exists probabilistic algorithms to solve the leader election problem (see \cite{Ramanathan04}).\newline 
+Apart from probabilistic choice, there exists a different kind of choice, frequently used, but also making programs nondeterministic, called nondeterministic choice. One example is the following program: $\{ x := 2 \} \square \{ x := 5 \}$. In this example, the program will set $x$ nondeterministically to $2$, or to $5$, but we cannot assign a probability to any of these choices. More precisely, it makes no sense to assign them a probability. In this whole report, programs containing such choices will be called \emph{nondeterministic programs}. Such programs share with probabilistic programs their ability to return different outputs for one given input. The nondeterministic choice was first introduced by Dijkstra in the GCL language \cite{Dijkstra76} (which did not include the probabilistic choice), and is used, for instance, in the model-checker Spin, to model the unpredictable behavior of a program where several choices are possible. It is also used in programs where the outcomes of a choice are known, but the mecanism making the choices is either unknown, or uses overly complex probability distributions. \todo{Find a source} This kind of choice is also a common concept in concurrency theory.\bigskip
 
-However, major problems arise with the use of nondeterministic choice, including: defining proper semantics for this instruction, and the complication arising from combination of probabilistic and nondeterministic choices in the same program. In this report, we will use the following probabilistic nondeterministic program as a guildeline example:
+However, one major problem arises when combining the probabilistic and nondeterministic choices in the same program. Programs containing both types are called \emph{fully probabilistic programs}, whereas programs containing none of them are \emph{deterministic programs}. In this report, we will use the following fully probabilistic program as a running example:
 \begin{align*}
- P_0\textnormal{: } \{ x := 2 [\!] x := 5 \} [p] \{ x := 7 \} \textnormal{(with } p \in ]0,1[\textnormal{)}
+ P_0\textnormal{: } \{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \} \textnormal{(with } p \in ]0,1[\textnormal{)}
 \end{align*}
 
-This program intuitively seems to set the program variable $x$ to $7$ with a probability $1-p$, and with a probability $p$, to set nondeterministically $x$ either to $2$ or to $5$. How can we semantically describe this program ?\bigskip
+This program intuitively sets the program variable $x$ to $7$ with a probability $1-p$, and with a probability $p$, sets nondeterministically $x$ either to $2$ or to $5$. How can we semantically describe this program ?\bigskip
 
-When introducing the GCL language \cite{Dijkstra76} (whose semantics allow it to generate nondeterministic programs, but not probabilistic programs), Dijkstra also introduced \emph{predicate transformer semantics}, and particularly the calculus of weakest precondition. This concept relies on Hoare triples: A \emph{Hoare triple} is a triple of the form $\{\psi\}P\{\varphi\}$, where $P$ is a program, and where $\psi$ and $\varphi$ are predicates respectively called \emph{precondition} and \emph{postcondition}. A Hoare triple is said to be \emph{valid} if and only if, each time that an initial state satisfies $\psi$, the final state obtained after executing $P$ satisfies $\varphi$. Thus, Dijkstra introduced the weakest preconditions: if $P$ is a program and $\varphi$ is a postcondition, then $wp[P](\varphi)$ is the weakest (in the sense of "satisfied by the most states") precondition $\psi$ making the Hoare triple $\{\psi\}P\{\varphi\}$ valid. The predicate transformer computation is a set of rules which, knowing a program $P$ and a postcondition $\psi$, allow the computation of the associated weakest precondition $wp[P](\psi)$. One can therefore see $P$ as a predicate transformer, transforming the predicate $\varphi$ into the predicate $wp[P](\varphi)$.\newline
-For instance, consider the following program:
-\begin{align*}
- P_1\textnormal{: } x := -y+1
-\end{align*}
-If we denote by $[x \geq 5]$ the predicate satisfied by all states where $x$ is greater or equal to $5$, then we get that $wp[P_1]([x \geq 5]) = [y \leq -4]$. (The formal method to get this result is presented in \cite{Dijkstra76} and will be reminded in Section \ref{sec:preliminaries})\bigskip
 
-This method was later further extended in \cite{McIver05} to probabilistic nondeterministic programs (generated by the pGCL language, which is an extended version of GCL including probabilistic choice), by changing the semantics a little, such that the weakest precondition $wp[P](\varphi)$ assigns to each state $\sigma$ the probability that the execution of the program $P$ in $\sigma$ terminates in a state satisfying $\varphi$. By applying semantics defined in \cite{McIver05} to the program $P_0$ (note that, the way the program is written, the final state should not depend on the initial state in this example), we get that the probability, for each initial state, that the the final state satisfies $[x = 7]$ is $1-p$, which is intuitively expected (formally, this means that $wp[P_0]([x = 7])$ assigns to each state the constant $1-p$). Now, consider the subprogram $P_2$ of $P_0$:
+
+A frequently used semantics, which turned out to be well-suited to program verification, is Dijkstra's predicate transformer semantics \cite{Dijkstra76}, which consists in viewing nondeterministic programs (without probabilistic choice) as predicate transformers. More precisely, if $P$ is a program and $\varphi$ a predicate over the set of states (i.e. an object modeling a property, that each state will or not satisfy), then the predicate transformer semantics describes $P$ as an object $wp[P]$, transforming the predicate $\varphi$ (called \emph{postcondition} in this context) into another predicate called the \emph{weakest precondition of $\varphi$ for the program $P$}, denoted by $wp[P](\varphi)$. As the name explicitely says, this new predicate is the weakest (in the sense of "least restrictive", or "satisfied by the most states") predicate $\psi$ verifying the following property: if $P$ is executed in a state satisfying $\psi$, then $P$ is guaranteed to terminate in a state satisfying $\varphi$.\newline
+
+%When introducing the GCL language \cite{Dijkstra76} (whose semantics allow it to generate nondeterministic programs, but not probabilistic programs), Dijkstra also introduced \emph{predicate transformer semantics}, and particularly the calculus of weakest precondition. This concept relies on Hoare triples: A \emph{Hoare triple} is a triple of the form $\{\psi\}P\{\varphi\}$, where $P$ is a program, and where $\psi$ and $\varphi$ are predicates respectively called \emph{precondition} and \emph{postcondition}. A Hoare triple is said to be \emph{valid} if and only if, each time that an initial state satisfies $\psi$, the final state obtained after executing $P$ satisfies $\varphi$. Thus, Dijkstra introduced the weakest preconditions: if $P$ is a program and $\varphi$ is a postcondition, then $wp[P](\varphi)$ is the weakest (in the sense of "satisfied by the most states") precondition $\psi$ making the Hoare triple $\{\psi\}P\{\varphi\}$ valid. The predicate transformer computation is a set of rules which, knowing a program $P$ and a postcondition $\psi$, allow the computation of the associated weakest precondition $wp[P](\psi)$. One can therefore see $P$ as a predicate transformer, transforming the predicate $\varphi$ into the predicate $wp[P](\varphi)$.\newline
+
+
+
+For instance, consider the following sequential program:
 \begin{align*}
- P_2\textnormal{: } x := 2 [\!] x := 5 
+ P_1\textnormal{: } x := -y ; x := x+1
 \end{align*}
-We also get that the probability, for each state, that the final state satisfies $[x = 2]$ is $0$ (and symmetrically for $[x = 5]$), but the probability for each state that the final state satisfies $[x = 2 \textnormal{ OR } x = 5]$ is $p$. Theses results are not unexpected, as the execution of $P_0$ has a probability $p$ of executing the $P_2$, in which we know that $x$ is set  either to $2$ or to $5$. However, as it is not possible to assign probabilities to the nondeterministic choices, conventions must be defined in order to compute weakest preconditions. In \cite{McIver05}, the authors chose a convention such that, in this case, the probability of getting to a state satisfying $[x = 2]$ is $0$, as there is no guarantee that the corresponding instruction is executed and no way to assign a probability.\newline
-However, this result seems to lack information, as there is a possibility that the final state satisfies $[x = 2]$, but the corresponding probability is $0$, and in order to know that this program can achieve a state where $[x = 2]$, we have to compute the weakest precondition of another postcondition as $[x = 2]$ (in this case, $[x := 2 \textnormal{ OR } x = 5]$).\newline
-Moreover, the convention chosen in \cite{McIver05} (and in \cite{WuChen11}) is not universal, as other authors \cite{WuChen08,WuChen12} chose conventions with which we get other results (notably the probability of achieving a state where $[x = 2]$ holds becomes $p$ (and symmetrically for $[x = 5]$), and the probability of achieving a state where $[x = 2 \textnormal{ OR } x = 5]$ holds remains $p$ ). \bigskip
+If we denote by $[x \geq 5]$ the predicate satisfied by all states where $x$ is greater or equal to $5$, then we get that $wp[P_1]([x \geq 5]) = wp[x := -y]([x \geq 4]) = [y \leq -4]$. (The formal method to get this result is presented in \cite{Dijkstra76} and will be reminded in Section \ref{sec:preliminaries})\bigskip
+
+Dijkstra's predicate transformer semantics was extended by McIver and Morgan \cite{McIver05} to fully probabilistic programs by changing the semantics, such that the weakest precondition $wp[P](\varphi)$ assigns to each state $\sigma$ the probability that the execution of the program $P$ in $\sigma$ terminates in a state satisfying $\varphi$, instead of assigning only $0$ or $1$ values meaning that the execution of $P$ will certainly or certainly not terminate in a state satisfying the postcondition. Note that applying the semantics of McIver and Morgan to nondeterministic programs, without any probabilistic choice, the results are the same as in Dijkstra's semantics.\newline
+By applying the semantics of McIver and Morgan to the program $P_0$ (note that, the way the program is written, the final state should not depend on the initial state in this example), we get that the probability, for each initial state, that the the final state satisfies $[x = 7]$ is $1-p$, which is intuitively expected (formally, this means that $wp[P_0]([x = 7])$ assigns to each state the constant $1-p$). Now, consider the subprogram $P_2$ of $P_0$:
+\begin{align*}
+ P_2\textnormal{: } \{x := 2\} \square \{x := 5\} 
+\end{align*}
+%The semantics of McIver and Morgan also give the following result: the probability, for each initial state, that the final state (after executing $P_0$) satisfies $[x = 2]$ is $0$ (and symmetrically for $[x = 5]$); however, the probability, for each state, that the final state (after executing $P_0$) satisfies $[x = 2 \textnormal{ OR } x = 5]$ is $p$. Theses results are not unexpected, as the execution of $P_0$ has a probability $p$ of executing $P_2$, in which we know that $x$ is set  either to $2$ or to $5$.\newline 
+Recall that, the semantics of McIver and Morgan, $wp[P](\varphi)$ assigns to each state the probability that the execution of $P$ in this state terminates in a state satisfying $\varphi$ (it is therefore a function from the set of states to $[0,1]$).
+As it is not possible to assign probabilities to the nondeterministic choices, conventions must be defined in order to compute weakest precondition when the program contains nondeterministic choices:
+\begin{enumerate}
+\item One possible choice is to consider that the outcome which is realized is the least desired outcome (for the given postcondition). In this case, the nondeterministic choice is called \emph{demonic choice} \cite{McIver05}. In this example, when computing $wp[P_2]([x = 2])$, the least desired outcome is $x := 5$. It is therefore considered as the chosen outcome, and after its execution, $[x = 2]$ cannot be satisfied. Hence, $wp[P_2]([x = 2])$ assigns to each state the constant $0$, and thus, $wp[P_0]([x = 2])$ also assigns to each state the constant $0$. We get the same result with $[x = 5]$. However, when computing $wp[P_2]([x = 2 \textnormal{ OR } x = 5])$, we get the constant function $1$ (thus, $wp[P_0]([x = 2 \textnormal{ OR } x = 5])$ is the constant function $p$), because in both possible outcomes of the choice, the postcondition will be satisfied. But this result is counterintuitive, as it violates the modularity law of probabilities (detailed below).
+\item An alternative possibility is the \emph{angelic choice} (named in \cite{McIver05}), which is intuitively the opposite of the demonic choice. In this case, the outcome which is realized is the most desired outcome. With this choice, we get that $wp[P_0]([x = 2])$ is the constant function $p$, and symetrically for $wp[P_0]([x = 5])$. But $wp[P_0]([x = 2 \textnormal{ OR } x = 5])$ is also the constant function $p$. These results also violates the modularity law of probabilities.
+\end{enumerate}
+In both cases, counterintuitive results are obtained.
+\notsure{Moreover, in the demonic choice case, in order to realise that there exists executions where $[x=2]$ can be achieved, we have to compute the weakest precondition of another postcondition (namely, $[x = 2 \textnormal{ OR } x = 5]$), because $wp[P_0]([x = 2])$ is the constant function $0$. The latter result is therefore missing information.} Therefore, in order to obtain more intuitive, or more understandable results, we can either try to define a new convention for the nondeterministic choice, or define new semantics not based on probabilities.\bigskip
+
+%In \cite{McIver05}, the authors chose a convention such that, in this case, the probability of getting to a state satisfying $[x = 2]$ is $0$, as there is no guarantee that the corresponding instruction is executed and no way to assign a probability.\newline
+%However, this result seems to lack information, as there is a possibility that the final state satisfies $[x = 2]$, but the corresponding probability is $0$, and in order to know that this program can achieve a state where $[x = 2]$, we have to compute the weakest precondition of another postcondition as $[x = 2]$ (in this case, $[x := 2 \textnormal{ OR } x = 5]$).\newline
+%Moreover, the convention chosen in \cite{McIver05} (and in \cite{WuChen11}) is not universal, as other authors \cite{WuChen08,WuChen12} chose conventions with which we get other results (notably the probability of achieving a state where $[x = 2]$ holds becomes $p$ (and symmetrically for $[x = 5]$), and the probability of achieving a state where $[x = 2 \textnormal{ OR } x = 5]$ holds remains $p$ ). \bigskip
 
 Some authors \cite{WuChen08,WuChen11,WuChen12} tried a different approach to weakest precondition calculus, based on possibility theory rather on probabilities, in order to define different semantics and possibly give a better comprehension of how nondeterministic programs behave.
-Possibility theory is an alternative approach to probabilities to model uncertainty (detailed in \cite{Agarwal15,Shapiro09}). It is well-known that if $Pr$ is a probability measure over $\Omega$ for the $\sigma$-algebra $\mathcal{A}$, then it satisfies the following axioms:
+Possibility theory is an alternative approach to probabilities to model uncertainty (detailed in \cite{Agarwal15,Shapiro09}). It is well-known that $Pr$ is a probability measure over $\Omega$ for the $\sigma$-algebra $\mathcal{A}$ if it is a mapping from $\mathcal{A}$ to $[0,1]$ satisfying the following axioms:
 \begin{enumerate}
-\item $\forall U \in \mathcal{A}$, $Pr(U) \in [0,1]$
 \item $Pr(\emptyset) = 0$
 \item $Pr(\Omega) = 1$
-\item $\forall U,V \in \mathcal{A}$, $Pr(U \cup V) = Pr(U) + Pr(V) - Pr(U \cap V)$
+\item $\forall U,V \in \mathcal{A}$, $Pr(U \cup V) = Pr(U) + Pr(V) - Pr(U \cap V)$ (modularity law)
 \end{enumerate}
-On the contrary, a possibility measure over $\Omega$ for the $\sigma$-algebra $\mathcal{A}$ is a mapping $\Pi$ satisfying the following axioms (adapted from \cite{Agarwal15,Shapiro09} ):
+On the contrary, $\Pi$ is a possibility measure over $\Omega$ for the $\sigma$-algebra $\mathcal{A}$ if it is a mapping from $\mathcal{A}$ to $[0,1]$ satisfying the following axioms (see \cite{Agarwal15,Shapiro09} ):
 \begin{enumerate}
-\item $\forall U \in \mathcal{A}$, $\Pi(U) \in [0,1]$
 \item $\Pi(\emptyset) = 0$
 \item $\Pi(\Omega) = 1$
-\item $\forall U,V \in \mathcal{A}$, $\Pi(U \cup V) = \Max( \Pi(U), \Pi(V))$
+\item $\forall U,V \in \mathcal{A}$, $\Pi(U \cup V) = \Max( \Pi(U), \Pi(V))$ (max-modularity law)
 \end{enumerate}
-This type of measure, however, does not give as many information as probabilities. Indeed, when $Pr(U) = 1$, we know that an event of $U$ happens almost surely, and when $Pr(U) = 0$, we know that any event of $U$ almost never happen. However, when $\Pi(U) = 0$, we know that all events of $U$ are impossible (thus cannot happen), but when $\Pi(U) = 1$, it just means that at least one event of $U$ is totally possible, but we cannot tell that it will almost surely happen. As the name says, a possibility measure only indicates how possible an event is.\bigskip
+This type of measure, however, does not give as much information as probabilities. Indeed, when $Pr(U) = 1$, we know that an event of $U$ happens almost surely, and when $Pr(U) = 0$, we know that any event of $U$ almost never happen. However, when $\Pi(U) = 0$, we know that all events of $U$ are impossible (thus cannot happen), but when $\Pi(U) = 1$, it just means that at least one event of $U$ is totally possible, but we cannot tell that it will almost surely happen. As the name says, a possibility measure only indicates how possible an event is, but not how often it is realized. This behavior bears a strong resemblance to the nondeterministic choice, whose outcomes are known to be possible, but do not have any probability assigned. \bigskip
 
-Jumping from probabilities to possibilities also feels like a loss of information. But in fact, possibility theory has already been studied \cite{WuChen08,WuChen11,WuChen12} in order to define predicate transformer semantics for fuzzy imperative languages (defined in \cite{Bueno93,Bueno97}, they are languages with more instructions based on possibilities, and are at least as expressive as GCL). However, these languages do not include the probabilistic choice.\bigskip
+Using possibilities instead of probabilities first seems not to be an interesting choice, since possibilities normally do not bear as much information as probabilities, as we said earlier. But in fact, possibility theory has already been studied \cite{WuChen08,WuChen11,WuChen12} in order to define predicate transformer semantics for fuzzy imperative languages (defined in \cite{Bueno93,Bueno97}, they are languages with more instructions based on possibilities, and are at least as expressive as GCL), and the authors obtained interesting semantics in which each possible outcome is taken in account (even for GCL programs). However, these languages do not include the probabilistic choice.\bigskip
 
-In this report, our goal is to give our own semantics of probabilistic nondeterministic programs, and more precisely an expected value semantics (which can be derived from predicate transformer semantics), where we consider expected values of fuzzy random variables (first defined in \cite{PuriRal86}, and then simplified in \cite{Shapiro09}). It is a way to extend the ideas presented in \cite{WuChen08,WuChen11,WuChen12} using possibility theory to the pGCL language presented in \cite{McIver05}.\newline
-\todo{Insert a quick organisation of the report here, reminding what to find in each section}
+In this report, our goal is to give our own semantics of probabilistic nondeterministic programs, and more precisely an expected value semantics (which can be derived from predicate transformer semantics), where we consider expected values of fuzzy random variables (first defined in \cite{PuriRal86}, and then simplified in \cite{Shapiro09}). It is a way to extend the ideas presented in \cite{WuChen08,WuChen11,WuChen12} using possibility theory to the pGCL language presented in \cite{McIver05}.\bigskip
 
+\todo{Insert the organisation of the paper when we are sure of the plan.}
+%The report is organised as follows: In Section \ref{sec:preliminaries}, we notably recall elementary notions such as Hoare triples and explain Dijkstra's predicate transformer semantics for GCL programs (i.e. nondeterministic programs), based on \cite{Dijkstra76}. In Section \ref{sec:state}, we present the existing work of previous authors, notably the generalisation of Dijkstra's predicate transformer semantics to pGCL programs (i.e. probabilistic nondeterministic programs) \cite{McIver05}, how the semantics can be used to compute expected values of random variables \cite{McIver05}, and the use of possibility theory in order to define other semantics for GCL programs \cite{WuChen08,WuChen11,WuChen12}. In Section \ref{sec:contribution}, we present the notion of fuzzy random variables \cite{PuriRal86,Shapiro09}, as well as our own semantics, which allows the computation of expected values of fuzzy random variables with a weakest-precondition-style calculus. The report is concluded in \ref{sec:conclusion}.
+
+\todo{Make the notations uniform in the whole report: use $S$ (or $C$) in the rules, in the definitions, etc... And use $P$ when refering explicitely to a program defined as an example}
 \section{Related Work}
 \label{sec:related}
 
-\section{Preliminaries}
-\label{sec:preliminaries}
+%\section{Preliminaries}
+%\label{sec:preliminaries}
+%In this section, we consider only nondeterministic programs in the GCL language. We present the GCL language, define more formally the Hoare triples and their validity, and detail Dijkstra's weakest-precondition computation rules \cite{Dijkstra76} on which the existing semantics (presented in Section \ref{sec:state}), as well as our own semantics (presented in Section \ref{sec:contribution}) are based.
+    
+%    \subsection{The GCL Language}
+%    Let $Vars$ be the set of variables of one program, and $Vals$ the set of values to which the variables can be assigned. The state space $\Sigma$ is the set of mappings from $Vars$ to $Vals$: $$\Sigma = \{\sigma \,|\, \sigma : Vars \rightarrow Vals \}$$
+%     This is a way to model the fact that each state is characterized uniquely by the value of each variable in the program.\bigskip
+%
+%The GCL language, presented in \cite{Dijkstra76}, is defined by the following grammar\footnote{The original GCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while} (\texttt{true})\{ \texttt{skip} \}$}\footnote{Dijkstra did not define GCL with this exact grammar, but introduced nondeterminism in guarded commands. But the grammar presented here, adapted from \cite{McIver05}, is equivalent.}:
+%
+%
+%\begin{align*}
+% S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S  \,|\, \{S\} \square \{S\} \,|\ \\
+% & \texttt{ if } (b) \texttt{ then } \{ S \} \texttt{ else } \{ S \} \,|\, \texttt{ while }(b) \texttt{ do }\{S\} \\
+%\end{align*}
+%
+%This language is sufficient to describe any nondeterministic program. The \texttt{if\dots then\dots else} and \texttt{while} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if\dots then\dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ (element of $Vals$) is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. The $\{S_1\} \square \{S_2\} $ is a statement that will nondeterministically execute either $S_1$ or $S_2$. Recall that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $\{S_1\} \square \{S_2\} $ is executed a large number of times, no clear pattern should appear.\newline
+%Note that this grammar only has a choice instruction with two choices; but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using the loop) of outcomes.\bigskip
+     
+%	\subsection{Hoare triples}
+%     
+%     When model-checking programs, we need a way to define properties that are satisfied or not, depending on the state of the program. We can use the following definition of predicates.
+%     \begin{definition} 
+%     \begin{itemize}
+%     \item A \emph{predicate} is a mapping $\varphi : \Sigma \rightarrow \{0,1\}$.
+%     A state $\sigma$ is said to \emph{satisfy the predicate} $\varphi$ if $\varphi(\sigma) = 1$. (Note that $\varphi$ may also be viewed simply as a subset of $\Sigma$. )
+%     \item A partial order can be define over predicates: $\varphi_1 \leq \varphi_2$ if $\forall \sigma \in \Sigma$, $\varphi_1(\sigma) \leq \varphi_2(\sigma)$. (This partial order is equivalent to the inclusion, when considering predicates as subsets of $\Sigma$.)
+%     \end{itemize}
+%     \end{definition}
+%      
+%      We also need a formal way to define the specification of a program, which is usually considered as a Hoare triple:
+%      \begin{definition}
+%      A \emph{Hoare triple} is a triple $\{\psi\}P\{\varphi\}$ where $P$ is a program, and $\psi$ and $\varphi$ are two predicates respectively called pre- and postcondition.
+%      \end{definition}
+%      We expect the specification of a program (when it is correct) to indicate that, if the precondition holds and the program is executed, then the postcondition holds after the execution. This is formalised by the validity of Hoare triples:
+%      \begin{definition}
+%      A Hoare triple $\{\psi\}P\{\varphi\}$ is said to be \emph{valid} if each time that $P$ is executed in a state satisfying $\psi$, then $P$ terminates in a state satisfying $\varphi$.
+%      (Note that because of nondeterminism, the execution of $P$ in one state may result in several possible states. Therefore, we expect that, if $\sigma$ satisfies $\psi$, then all states in which $P$ can result when executed in $\sigma$ satisfy $\varphi$.)
+%      \end{definition}
+     
+     
+	
+%	\subsection{Predicate transformer semantics and weakest precondition calculus}
+%	Dijkstra showed that there exists, for a given program $P$ and a given postcondition $\varphi$, a particular precondition $wp[P](\varphi)$ called the \emph{weakest precondition}, greater (for the previously defined partial order) than all preconditions $\psi$ making the Hoare triple $\{\psi\}P\{\varphi\}$ valid. It is named this way, since it is indeed the weakest (in the sense of "less restrictive", or "satisfied by the most states") precondition making the Hoare triple valid.\bigskip
+%
+%It is then possible to see $wp[P]$ as a predicate transformer, transforming a postcondition $\varphi$ into the weakest-precondition $wp[P](\varphi)$. The rules of transformation (adapted from \cite{McIver05}) are given in Table \ref{table:rules_wp_gcl}. Recall that predicates are mappings from $\Sigma$ to $\{0,1\}$. The state $\sigma[x/A]$ is the state obtained when setting the variable $x$ to the value of $A$ in $\sigma$; $[\![ b : true ]\!] $ is a particular predicate, evaluating to $1$ in $\sigma$ if and only if the boolean variable $b$ is true in $\sigma$ (and symmetrically for $[\![ b : false ]\!] $). Finally, the form lfp ($\lambda X. f(X)$) denotes the least fixed point of the application $f$ (its value can be computed with Kleene's fixed point theorem). \todo{Do not forget to precise that in order for fixed points to exists, it suffices to have a complete partial order, and that it is the case here. Find a reference for Kleene's theorem.}\bigskip
+%\begin{table}
+%\begin{center}
+%\begin{tabular}{|p{3cm}|p{9cm}|}
+% \hline
+% \thead{$P$} & \thead{$wp[P](\varphi)$} \\
+% \hline
+% \thead{\texttt{skip}} & \thead{$\varphi$} \\
+% \hline
+% \thead{$x := A$} & \thead{$\lambda\sigma.\varphi(\sigma[x/A])$} \\
+% \hline
+% \thead{$P_1 ; P_2$} & \thead{$wp[P_1](wp[P_2](\varphi))$} \\
+% \hline
+% \thead{$\{P_1\} \square \{P_2\}$} & \thead{$\Min(wp[P_1](\varphi),wp[P_2](\varphi))$} \\
+% \hline
+% \thead{$\texttt{if } (b) \texttt{ then } \{ P_1 \}$ \\ $\texttt{ else } \{ P_2 \}$} & \thead{$\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[P_1](\varphi)(\sigma) + [\![b : false ]\!](\sigma) \cdot wp[P_2](\varphi)(\sigma)$} \\
+% \hline
+% \thead{$\texttt{while }(b) \texttt{ do }\{P\}$} & \thead{lfp ($\lambda X. (\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[P_1](X)(\sigma) + [\![b : false ]\!](\sigma) \cdot \varphi(\sigma))$)} \\
+% \hline
+%\end{tabular}
+%\end{center}
+%\caption{Rules for defining the predicate transformer $wp$}
+%\label{table:rules_wp_gcl}
+%\end{table}
+%
+%Applying these rules to the example program $P_1$ from Section \ref{sec:intro} with the postcondition $[x \geq 5]$ (evaluating to $1$ in state $\sigma$ if and only if $x \geq 5$ holds in $\sigma)$, we get:
+%\begin{align*}
+%& \textnormal{ }wp[x := - y ; x := x+1]([x \geq 5]) = wp[x := - y ](wp[x := x+1]([x \geq 5])) \\
+% =& \textnormal{ }wp[x := - y ]([x \geq 4]) = [-y \geq 4] = [y \leq -4] \\
+%\end{align*}
+	
+\section{State of the art}
+\label{sec:state}
+In this section, we present the pGCL language and the vision of McIver and Morgan over weakest precondition calculus \cite{McIver05}, we quickly explain (see \cite{McIver05}) how this type of calculus can be exploited to compute expected values of random variables, and finally quickly present the current uses of possibility theory as a base for predicate transformer semantics in fuzzy languages.
 
+	\subsection{The pGCL language}
+	The pGCL language is an extension of Dijkstra's GCL. It was first introduced in \cite{McIver05}, and includes a new instruction that GCL did not include: the probabilistic choice. Therefore, the pGCL language allows the generation of fully probabilistic programs. It is defined by the following grammar\footnote{The original GCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while } (\texttt{true}) \texttt{ do }\{ \texttt{skip} \}$}\footnote{The rules for nondeterminism were defined by Dijkstra in guarded commands \cite{Dijkstra76}, but McIver and Morgan used an equivalent grammar and added probabilistic choice to get the grammar presented here. }:\bigskip
+
+
+\begin{align*}
+ S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S  \,|\, \{S\} \square \{S\} \,|\ \{S\} [p] \{S\} \,|\ \\
+ & \texttt{ if } (b) \texttt{ then } \{ S \} \texttt{ else } \{ S \} \,|\, \texttt{ while }(b) \texttt{ do }\{S\} \\
+\end{align*}
+
+This language is sufficient to describe any fully probabilistic program. The \texttt{if\dots then\dots else} and \texttt{while} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if\dots then\dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. We take interest primarly in the two remaining instructions.\newline
+The $\{S_1\} [p] \{S_2\}$ (where $p \in ]0,1[$) instruction models the fact that there is a probability $p$ that $S_1$ is executed, and a probability $1-p$ that $S_2$ is executed. Finally, $\{S_1\} \square \{S_2\} $ is a statement that will nondeterministically execute either $S_1$ or $S_2$. The difference with the probabilistic choice is that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $\{S_1\} \square \{S_2\} $ is executed a large number of times, no clear pattern should appear, whereas the execution of $S_1 [p] S_2$ a large number of times will tend to have a proportion $p$ of cases where $S_1$ is executed, and a proportion $1-p$ of cases where $S_2$ is executed.\newline
+Note that this grammar only has choice instructions with two outcomes; but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using loops) of outcomes.\bigskip
+
+	\subsection{Predicate transformer semantics and weakest precondition calculus}
+	Let $\Sigma$ be the set of program states. Each state is uniquely characterized by the values of each variable in the state.\bigskip
+	
+	\begin{definition}{\textnormal{(Predicate and binary predicate)}}
+	\item A \emph{predicate} $\varphi$ is a function from $\Sigma$ to $[0,1]$. One says that each state $\sigma$ has a probability $\varphi(\sigma)$ of satisfying $\varphi$.
+	\item When $\varphi$ takes only the values $0$ and $1$, it is called a \emph{binary predicate}. In this case, one abusively says that $\sigma$ satisfy $\varphi$ if and only if $\varphi(\sigma) = 1$.
+	\end{definition}
+
+    Let $P$ be a pGCL program and let $\varphi$ be a binary predicate.
+	What is the probability that the execution of $P$ in a state $\sigma$ is guaranteed to terminate in a state satisfying the postcondition $\varphi$ ? McIver and Morgan extended Dijkstra's vision of weakest precondition calculus, such that $wp[P](\varphi)(\sigma)$ is the answer, i.e. $wp[P](\varphi)$ is a predicate, and for each $\sigma \in \Sigma$, $wp[P](\varphi)(\sigma)$ is the probability that $\sigma$ satisfies $wp[P](\varphi)$, i.e. the probability that the execution of $P$ in $\sigma$ terminates in a state satisfying $\psi$.\newline
+	Therefore, $P$ is described by the semantics of McIver and Morgan as an object $wp[P]$ transforming the predicate $\varphi$ into the predicate $wp[P](\varphi)$. The rules\footnote{These rules correspond to the case where the nondeterministic choice is considered to be the demonic choice, as Dijkstra first intended.} for computing  $wp[P](\varphi)$ are given in Table \ref{table:rules_wp_pgcl}. 
+	
+	\begin{table}
+\begin{center}
+\begin{tabular}{|p{3cm}|p{9cm}|}
+ \hline
+ \thead{$P$} & \thead{$wp[P](\varphi)$} \\
+ \hline
+ \thead{\texttt{skip}} & \thead{$\varphi$} \\
+ \hline
+ \thead{$x := A$} & \thead{$\lambda\sigma.\varphi(\sigma[x/A])$} \\
+ \hline
+ \thead{$P_1 ; P_2$} & \thead{$wp[P_1](wp[P_2](\varphi))$} \\
+ \hline
+ \thead{$\{P_1\} \square \{P_2\}$} & \thead{$\lambda\sigma. \Min(wp[P_1](\varphi)(\sigma),wp[P_2](\varphi)(\sigma))$} \\
+ \hline
+ \thead{$\{P_1\} [p] \{P_2\}$} & \thead{$\lambda\sigma. p\cdot wp[P_1](\varphi)(\sigma) + (1-p)\cdot wp[P_2](\varphi)(\sigma)$} \\
+ \hline
+ \thead{$\texttt{if } (b) \texttt{ then } \{ P_1 \}$ \\ $\texttt{ else } \{ P_2 \}$} & \thead{$\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[P_1](\varphi)(\sigma) + [\![b : false ]\!](\sigma) \cdot wp[P_2](\varphi)(\sigma)$} \\
+ \hline
+ \thead{$\texttt{while }(b) \texttt{ do }\{P\}$} & \thead{lfp ($\lambda X. (\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[P_1](X)(\sigma) + [\![b : false ]\!](\sigma) \cdot \varphi(\sigma))$)} \\
+ \hline
+\end{tabular}
+\end{center}
+\caption{Rules for defining the predicate transformer $wp$}
+\label{table:rules_wp_pgcl}
+\end{table}
+The state $\sigma[x/A]$ is the state obtained when syntactically replacing the variable $x$ by the value of $A$ in $\sigma$; $[\![ b : true ]\!] $ is a binary predicate, evaluating to $1$ in $\sigma$ if and only if the boolean variable $b$ is true in $\sigma$ (and symmetrically for $[\![ b : false ]\!] $). Finally, the form lfp ($\lambda X. f(X)$) denotes the least fixed point of the application $f$ (where the $X$ are predicates). The value of the least fixed-point can be computed with Kleene's fixed-point theorem (under certain hypotheses, verified here; more details in Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}).\bigskip
+	
+	\notsure{Note that the rules allow the computation of $wp[P](\varphi)$ for all arbitrary predicates $\varphi$, but in the practice, we only want to compute $wp[P](\varphi)$ where $\varphi$ is a binary predicate, because when checking programs, we want to verify whether the final states satisfy a property or not, and not to verify whether a final states satisfies a property with a certain probability. In the only cases where $\varphi$ is not a binary predicate, $\varphi$ will result from the computation of another weakest precondition $wp[P'](\psi)$} \bigskip
+	
+
+
+
+Applying these rules to the example program $P_1$ from Section \ref{sec:intro} with the postcondition $[x \geq 5]$ (binary predicate evaluating to $1$ in state $\sigma$ if and only if $x \geq 5$ holds in $\sigma)$, we get (the details with $\lambda$-calculus are left to the reader):
+\begin{align*}
+ \textnormal{ }wp[x := - y ; x := x+1]([x \geq 5]) = wp[x := - y ](wp[x := x+1]([x \geq 5]))
+\end{align*}
+The assignment rules determines that $wp[x := x+1]([x \geq 5]) = \lambda\sigma. [x \geq 5](\sigma[x/x+1])$.
+It turns out that:
+\begin{align*}
+wp[x := x+1]([x \geq 5]) = [x \geq 4]
+\end{align*}
+\begin{proof}
+Recall that $[x \geq 5](\sigma) = 1$ if $x \geq 5$ in $\sigma$ and $0$ else. Therefore $[x \geq 5](\sigma[x/x+1]) = 1$ if $x \geq 5$ in $\sigma[x/x+1]$ and $0$ else. This is equivalent to: $[x \geq 5](\sigma) = 1$ if $x+1 \geq 5$ in $\sigma$ and $0$ else. Therefore, $[x \geq 5](\sigma[x/x+1]) = [x+1 \geq 5](\sigma)$, and $wp[x := x+1]([x \geq 5]) = [x+1 \geq 5] = [x \geq 4]$.
+\end{proof}
+ We resume the computation:
+\begin{align*}
+& \textnormal{ }wp[x := - y ; x := x+1]([x \geq 5]) = wp[x := - y ](wp[x := x+1]([x \geq 5])) \\
+ =& \textnormal{ }wp[x := - y ]([x+1 \geq 5]) = \textnormal{ }wp[x := - y ]([x \geq 4]) = [-y \geq 4] = [y \leq -4] \\
+\end{align*}
+
+	One can also apply these rules to the program $P_0$ and get the results presented in Section \ref{sec:intro}. The calculation is done in Appendix \ref{subsec:wp_p0}. \todo{Maybe move this calculation here if there is enough place. It should be more logical, since it is our running example.}
+	
+	\subsection{Computation of expected values}
+	\todo{It is the same as computing the expected value of a random variable whose outcomes are known, and are (for each state) values of $\RRposi$. Explain that some results, as shown in the intro, seem counterintuitive.}
+	
+	In the practice, weakest precondition calculus can be used to anticipate the value of certain functions. Recall that with the simple program $P_1$ given in Section \ref{sec:intro}, we proved that $wp[P_1]([x \geq 5]) = [y \leq -4]$. As $P_1$ is deterministic, we get that, if $\sigma$ satisfies $[y \leq -4]$, then the state obtained after executing $P_1$ in $\sigma$ satisfies $[x \geq 5]$; and if $\sigma$ does not satisfy $[y \leq -4]$, then the state obtained after executing $P$ in $\sigma$ does not satisfy $[x \geq 5]$. We can say that the function $[y \leq -4]$ anticipates the value of $[x \geq 5]$ after the execution of $P_1$.\bigskip
+	
+	\todo{Write references for what follows}
+It is in fact possible, in the deterministic case, to anticipate values of other functions, such as the function associating to $\sigma$ the value of $x^2$, or the value of $|\textnormal{sin}(y)|$ in $\sigma$. However, due to certain constraints in order to ensure the existence of least fixed-points and make the computation possible, we must restrict ourselves to functions from $\sigma$ to $\RRposi$. \footnote{With this restriction, a complete partial order can be defined on $\{f \,|\, f : \Sigma \rightarrow \RRposi \}$ and Kleene's fixed point theorem can be applied. See Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}} That restriction is not a problem in practice, as one can always decompose an arbitrary function as two functions, namely, its absolute value and its sign. \bigskip
+
+This computation can still be extended to nondeterministic programs (by considering that, in the nondeterministic choice, the anticipated value is the least one), and to fully probabilistic programs, by taking the ponderated mean between the two possible values. The rules of computation are rigorously the same as in Table \ref{table:rules_wp_pgcl}, but are applied to functions from $\Sigma$ to $\Rightarrow$.
+
+\begin{example} Consider the program $P_1$ from Section \ref{sec:intro}, and the function $\sigma \rightarrow x^2$ (where $x$ is replaced by its value in $\sigma$). Its value after the execution of $P_1$ can be computed with:
+\begin{align*}
+& \textnormal{ }wp[x := - y ; x := x+1](x^2) = wp[x := - y ](wp[x := x+1](x^2)) \\
+ =& \textnormal{ }wp[x := - y ]((x+1)^2) = = (1-y)^2  \\
+\end{align*}
+\end{example}
+	\todo{Apply to $P_0$ and underline the problem of counterintuitive results}
+	\subsection{Chinese work}
+	\todo{Obviously change this title when you have a better idea.}
 %\temp{
 %In this whole report, we will primarly consider the pGCL language, presented in \cite{McIver05}, and defined by the following grammar\footnote{The original pGCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while} (\texttt{true})\{ \texttt{skip} \}$}:
 %
 %
 %\begin{align*}
-% S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S \,|\, \{S\} [p] \{S\} \,|\, \{S\} [\!] \{S\} \,|\ \\
+% S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S \,|\, \{S\} [p] \{S\} \,|\, \{S\} \square \{S\} \,|\ \\
 % & \texttt{ if } (b) \texttt{ then } \{ S \} \texttt{ else } \{ S \} \,|\, \texttt{ while }(b) \texttt{ do }\{S\} \\
 %\end{align*}
 %
 %This language is sufficient to describe any probabilistic or nondeterministic program. The \texttt{if\dots then\dots else} and \texttt{while} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if\dots then\dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. We take interest primarly in the two remaining instructions.\newline
-%The $\{S_1\} [p] \{S_2\}$ instruction models the fact that there is a probability $p$ that $S_1$ is executed, and a probability $1-p$ that $S_2$ is executed. Finally, the $\{S_1\} [\!] \{S_2\} $ (first introduced by Dijkstra in \cite{Dijkstra76}) is a statement that will nondeterministically execute either $S_1$ or $S_2$. The difference with the probabilistic choice is that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $\{S_1\} [\!] \{S_2\} $ is executed a large number of times, no clear pattern should appear, whereas the execution of $S_1 [p] S_2$ a large number of times will tend to have a proportion $p$ of cases where $S_1$ is executed, and a proportion $1-p$ of cases where $S_2$ is executed.\newline
+%The $\{S_1\} [p] \{S_2\}$ instruction models the fact that there is a probability $p$ that $S_1$ is executed, and a probability $1-p$ that $S_2$ is executed. Finally, the $\{S_1\} \square \{S_2\} $ (first introduced by Dijkstra in \cite{Dijkstra76}) is a statement that will nondeterministically execute either $S_1$ or $S_2$. The difference with the probabilistic choice is that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $\{S_1\} \square \{S_2\} $ is executed a large number of times, no clear pattern should appear, whereas the execution of $S_1 [p] S_2$ a large number of times will tend to have a proportion $p$ of cases where $S_1$ is executed, and a proportion $1-p$ of cases where $S_2$ is executed.\newline
 %Note that we are using choice instructions with only two choices, but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using the loop) of outcomes.\bigskip
 %}
 
@@ -153,6 +347,8 @@ In this report, our goal is to give our own semantics of probabilistic nondeterm
 \label{sec:contribution}
 
 In this section, we consider programs over the language presented in Section \ref{sec:preliminaries}, and our goal is to define clearer semantics for these programs as the semantics we presented before. Recall that we showed in Section \ref{sec:preliminaries} that weakest-precondition calculus could be used in order to compute expected values of random variables. Our main idea here is to combine the concept of \textit{Fuzzy random variable} (introduced in \cite{PuriRal86}, and simplified in \cite{Shapiro09}) with the computation of expected values.\newline
+
+\subsection{Fuzzy random variables}
 Let $\Sigma$ be the set of states. We consider that the variables in our programs can only take \underline{real positive} values.\footnote{This is due to constraints explained further. But note that we can implement an arbitrary real variable by two variables, one for its absolute value, and one for its sign.} We adapted the following definition from \cite{PuriRal86}.
 
 \begin{definition}{\textnormal{(Fuzzy Random Variable)\newline}}
@@ -166,6 +362,7 @@ A fuzzy random variable $X$ over a program can model several concepts. For insta
 % For instance, for any program variable $x$, with the previous notations, for all $\sigma \in \Sigma$, $\underline{x}(\sigma) = \{ x \}$ is the expected value of the program variable $x$ after executing the program $\texttt{skip}$ in $\sigma$.\newline
 % As all previous computations can be obtained from program variables (for instance, the runtime of a program (in the sense of "number of instructions executed before termination") can be obtained by adding a program variable $t$ representing the current runtime, initially $0$, and incrementing it at each instruction), we will in the following only consider computation of expected values of fuzzy random variables characterizing the value of a program variable after the execution of the program in one state.\newline
 
+\subsection{Contribution: the weakest-precondition-style calculus of expected values of fuzzy random variables}
 Let $F = \{f \,|\, f : \sigma \rightarrow P(\RRposi) \}$ be the set of fuzzy random variables, and $Progs$ be the set of pGCL programs. We define the following application:
 
 \begin{definition}
@@ -190,7 +387,7 @@ We give rules in Table \ref{table:rules_ev} of a predicate-transformer-style cal
  \hline
  \thead{$S_1 [p] S_2$} & \thead{$\lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in ev[S_2](X)(\sigma) \}$} \\
  \hline
- \thead{$S_1 [\!] S_2$} & \thead{$\lambda\sigma. ev[S_1](X)(\sigma) \cup ev[S_2](X)(\sigma)$} \\
+ \thead{$\{S_1\} \square \{S_2\}$} & \thead{$\lambda\sigma. ev[S_1](X)(\sigma) \cup ev[S_2](X)(\sigma)$} \\
  \hline
  \thead{$\texttt{if } (b) \texttt{ then } \{ S_1 \}$ \\ $\texttt{ else } \{ S_2 \}$} & \thead{$\lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$ \\$t_1 \in ev[S_1](X)(\sigma), t_2 \in ev[S_2](X)(\sigma) \}$} \\
  \hline
@@ -198,12 +395,12 @@ We give rules in Table \ref{table:rules_ev} of a predicate-transformer-style cal
  \hline
 \end{tabular}
 \end{center}
-\label{table:rules_ev}
 \caption{Rules for defining the FRV transformer $ev$}
+\label{table:rules_ev}
 \end{table}
 
-Consider the guideline example $P$: $\{ x := 2 [\!] x := 5 \} [p] \{ x := 7 \}$. We want to compute the expected value of $x$ after the execution of $P$. Thus, we have to determine $ev[P](\underline{x})$,which will map each state $\sigma$ to the expected value of $x$ after executing $P$ in $\sigma$. It is a function of $\sigma$, but the form of $P$ gives the intuition that it will be a constant function, not depending on $\sigma$.\newline
-With the rules presented in Table \ref{table:rules_ev}, we can see that this requires first to compute the functions $ev[x := 2 [\!] x := 5](\underline{x})$ and $ev[x := 7](\underline{x})$; besides, the former requires to compute $ev[x := 2](\underline{x})$, $ev[x := 5](\underline{x})$.\newline
+Consider the guideline example $P$: $\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}$. We want to compute the expected value of $x$ after the execution of $P$. Thus, we have to determine $ev[P](\underline{x})$,which will map each state $\sigma$ to the expected value of $x$ after executing $P$ in $\sigma$. It is a function of $\sigma$, but the form of $P$ gives the intuition that it will be a constant function, not depending on $\sigma$.\newline
+With the rules presented in Table \ref{table:rules_ev}, we can see that this requires first to compute the functions $ev[\{x := 2\} \square \{x := 5\}](\underline{x})$ and $ev[x := 7](\underline{x})$; besides, the former requires to compute $ev[x := 2](\underline{x})$, $ev[x := 5](\underline{x})$.\newline
 
 We get that:
 $$ev[x := 2](\underline{x}) = \lambda\sigma.\underline{x}(\sigma[x/2]) = \lambda\sigma.\{x_{\sigma[x/2]}\} = \lambda\sigma.\{2\}$$ 
@@ -211,14 +408,14 @@ Indeed, the value of $x$ in $\sigma[x/2]$ is necessarily $2$. Recall that $\sigm
 
 Now, we can compute that:
 \begin{align*}
-ev[x := 2 [\!] x := 5](\underline{x}) &= \lambda\sigma. ev[x := 2](\underline{x})(\sigma) \cup ev[x := 5](\underline{x})(\sigma) \\
+ev[\{x := 2\} \square \{x := 5\}](\underline{x}) &= \lambda\sigma. ev[x := 2](\underline{x})(\sigma) \cup ev[x := 5](\underline{x})(\sigma) \\
 &= \lambda\sigma. \{2\} \cup \{5\} = \lambda\sigma.\{2,5\} 
 \end{align*}
-This means that the possible expected values of $x$ after executing $x := 2 [\!] x := 5$ in any state $\sigma$ are $2$ and $5$.\newline
+This means that the possible expected values of $x$ after executing $\{x := 2\} \square \{x := 5\}$ in any state $\sigma$ are $2$ and $5$.\newline
 
 Finally, 
 \begin{align*}
-ev[P](\underline{x}) &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[x := 2 [\!] x := 5](\underline{x})(\sigma), t_2 \in ev[x := 7](\underline{x})(\sigma) \} \\
+ev[P](\underline{x}) &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[\{x := 2\} \square \{x := 5\}](\underline{x})(\sigma), t_2 \in ev[x := 7](\underline{x})(\sigma) \} \\
 &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in \{2,5\}, t_2 \in \{7\} \} \\
 &= \lambda\sigma. \{2p+7(1-p),5p+7(1-p) \} 
 \end{align*}
@@ -232,5 +429,89 @@ ev[P](\underline{x}) &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[x := 2 [
 
 \bibliography{ref1}{}
 \bibliographystyle{plain}
+
+\newpage
+\section{Appendix}
+\label{sec:appendix}
+
+\subsection{Kleene's Fixed point theorem}
+\label{subsec:kleene}
+
+Let $P$ be a set with a partial order $\leq$.
+\begin{definition}
+$P$ is a \emph{complete partial order} if the following conditions are satisfied:
+\begin{itemize}
+\item $\leq$ has a minimal element, denoted $\bot$ (such that $\forall x \in P$, $\bot \leq x$)
+\item for each subset $S = \{x_1, x_2, \dots \} \subset P$ where $x_1 \leq f_2 \leq \dots $, $S$ has a least upper bound $\Sup(S)$ in $P$.
+\end{itemize}
+\end{definition}
+
+\begin{theorem}{\textnormal{Kleene's fixed-point theorem}}
+If $P$ is a complete partial order and $f : P \rightarrow P$ is a monotone function (i.e. $\forall x,y \in P$, $x \leq y \Rightarrow f(x) \leq f(y)$), then $f$ has a least fixed-point, and its value is $\textnormal{lfp}(f) = \Sup_{n \in \NN}(f^n(\bot))$
+\end{theorem} \todo{Find a reference to the proof}
+\todo{Monotone or Scott-Continuous... ? If Scott-Continuous, then I should change all proofs a little, but it should not be a problem)}
+\subsection{Weakest precondition calculus in pGCL}
+\label{subsec:predicates_cpo}
+
+With the notations of Section \ref{sec:state}, let $\mathcal{P}$ be the set of predicates, and consider the relation $\leq_{\mathcal{P}}$ such that $f \leq_{\mathcal{P}} g$ iff $\forall \sigma \in \Sigma$, $f(\sigma) \leq g(\sigma)$. The order $\leq_{\mathcal{P}}$ is called the \emph{pointwise order}, as the value of $f$ must be inferior to the value of $g$ in each point $\sigma$.\bigskip
+
+We immediately get the following theorem:
+\begin{theorem}
+$(\mathcal{P},\leq_{\mathcal{P}})$ is a partial order.
+\end{theorem}
+
+We will prove that it is even a complete partial order:
+\begin{theorem}
+$(\mathcal{P},\leq_{\mathcal{P}})$ is a complete partial order
+\end{theorem}
+\begin{proof}
+\begin{itemize}
+\item One can easily verify that $\bot$ is the constant function $\sigma \rightarrow 0$
+\item Let $S = \{f_1, f_2, \dots \}$ be a subset of $P$ with $f_1 \leq_{\mathcal{P}} f_2 \leq_{\mathcal{P}} \dots$. Then, we define the function $f : \sigma \rightarrow \Sup_{n \in \NN^*}(f_n(\sigma))$. \newline
+For each $\sigma$, $f(\sigma)$ is correctly defined: as the set $\{f_n(\sigma) \,|\, n \in \NN^*\}$ is a  subset of $[0,1]$, it has a least upper bound in $[0,1]$. Thus, $f \in \mathcal{P}$
+\begin{itemize}
+\item Let $n \in \NN^*$. Then, by construction, for each $\sigma \in \Sigma$, $f_n(\sigma) \leq \Sup_{n \in \NN^*}(f_n(\sigma)) = f(\sigma)$. And therefore, $f_n \leq_{\mathcal{P}} f$. As this holds for any $n$, we get that $f$ is an upper bound of $S$
+\item Let $g$ be another upper bound of $S$: then, $\forall n \in \NN^*$, $\forall \sigma \in \Sigma$, $f_n(\sigma) \leq g(\sigma)$. Then, $\forall \sigma \in \Sigma$, $f(\sigma) = \Sup_{n \in \NN^*}(f_n(\sigma)) \leq g(\sigma)$. Hence, $f \leq g$. Therefore, $f$ is the least upper bound of $S$
+\end{itemize}
+\end{itemize}
+\end{proof}
+ 
+ Note that, with an analogue proof, if we denote by $\mathcal{F}$ the set of functions $\{f \,|\, f : \Sigma \rightarrow \RRposi\}$ (where $\RRposi = [0;+\infty]$ with $+\infty$ included), and by $\leq_{\mathcal{F}}$ the canonical pointwise order over $\mathcal{F}$, we can prove that $(\mathcal{F},\leq_{\mathcal{F}})$ is a complete partial order.
+ 
+\todo{Prove that the function constructed at then end of the Table \ref{table:rules_wp_pgcl} is indeed monotone (or Scott-Continuous ?). To that extent, prove inductively that $wp[P]$ is also monotone (or Scot-contiuous ?)}
+
+\subsection{Application of the semantics McIver and Morgan to $P_0$}
+\label{subsec:wp_p0}
+Recall that $P_0$ is the program $\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}$. Recall that we denoted by $P_2$ the left member $\{x := 2\} \square \{x := 5\}$. Let $\varphi$ be any postcondition.\bigskip
+
+Looking at the rules in Table \ref{table:rules_wp_pgcl}, one notices that, to compute $wp[P](\varphi)$, one first has to compute $wp[P_2](\varphi)$ and $wp[x := 7](\varphi)$, and to compute the former, we need to compute $wp[x := 2](\varphi)$ and $wp[x := 5](\varphi)$.\bigskip
+
+Applying the assignment rule, we get that:
+$$wp[x := 2](\varphi) = \lambda\sigma.\varphi(\sigma[x/2])$$
+And symmetrically: 
+$$wp[x := 5](\varphi) = \lambda\sigma.\varphi(\sigma[x/5])$$
+$$wp[x := 7](\varphi) = \lambda\sigma.\varphi(\sigma[x/7])$$.
+
+Now, applying the nondeterministic choice rule, we get:
+\begin{align*}
+wp[P_2](\varphi) &= wp[\{x := 2\} \square \{x := 5\}](\varphi) \\
+&= \lambda\sigma.\Min(wp[x := 2](\varphi)(\sigma),wp[x := 5](\varphi)(\sigma)) \\
+&= \lambda\sigma. \Min(\varphi(\sigma[x/2]),\varphi(\sigma[x/5]))
+\end{align*}
+
+And finally, applying the probabilistic choice rule, we get:
+\begin{align*}
+wp[P_0](\varphi) &= wp[\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}](\varphi)\\
+&= \lambda\sigma. p \cdot wp[\{x := 2\} \square \{x := 5\}](\varphi)(\sigma) + (1-p) \cdot wp[x := 7](\varphi)(\sigma)\\
+&= \lambda\sigma. p \cdot \Min(\varphi(\sigma[x/2]),\varphi(\sigma[x/5])) + (1-p) \cdot \varphi(\sigma[x/7])
+\end{align*}
+
+Now, we can try replacing $\varphi$ by interesting postconditions.
+\begin{itemize}
+\item If $\varphi = [x = 7]$, then for each $\sigma$, we get $[x = 7](\sigma[x/2]) = 0$, $[x = 7](\sigma[x/5]) = 0$ and $[x = 7](\sigma[x/7]) = 1$, and therefore, $wp[P_O]([x = 7]) = \lambda\sigma. (1-p)$
+\item If $\varphi = [x = 2]$, then for each $\sigma$, we get $[x = 2](\sigma[x/2]) = 1$, $[x = 2](\sigma[x/5]) = 0$ and $[x = 2](\sigma[x/7]) = 0$, and therefore, $wp[P_O]([x = 2]) = \lambda\sigma. 0$ (and symmetrically, $wp[P_O]([x = 5]) = \lambda\sigma. 0$)
+\item If $\varphi = [x = 2 \textnormal{ OR } x = 5]$, we get $[x = 2 \textnormal{ OR } x = 5](\sigma[x/2]) = 1$, $[x = 2 \textnormal{ OR } x = 5](\sigma[x/5]) = 1$ and $[x = 2 \textnormal{ OR } x = 5](\sigma[x/7]) = 0$, and therefore, $wp[P_O]([x = 2 \textnormal{ OR } x = 5]) = \lambda\sigma. p$
+\end{itemize}
+These are precisely the results stated in Section \ref{sec:intro}.
 
 \end{document}
