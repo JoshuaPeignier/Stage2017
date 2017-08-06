@@ -74,6 +74,11 @@ Robert.M Solovay and Volker Strassen.
 \newblock {\em A fast Monte-Carlo test for primality}.
 \newblock 1977.
 
+\bibitem{Tix09}
+Regina Tix, Klaus Keimel, and Gordon Plotkin.
+\newblock {\em Semantics Domain for Combining Probability and Non-Determinism}.
+\newblock 2009.
+
 \bibitem{WuChen11}
 Hengyang Wu and Yixiang Chen.
 \newblock {\em The Semantics of wlp and slp of Fuzzy Imperative Programming

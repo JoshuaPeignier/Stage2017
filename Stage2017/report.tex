@@ -5,6 +5,7 @@
 \usepackage{array}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{dsfont}
 \usepackage{cite}
 \usepackage{color}
 \usepackage{makecell}
@@ -21,6 +22,7 @@
 % \newtheorem{lemma}{Lemma}
 % \newtheorem{example}{Example}
 % \newtheorem{theorem}{Theorem}
+\newtheorem{notation}{Notation}
 
 \def\E {{\mathbb E}}
 \def\EE {{\mathbb E}}
@@ -106,7 +108,7 @@ For instance, consider the following sequential program:
 \begin{align*}
  P_1\textnormal{: } x := -y ; x := x+1
 \end{align*}
-If we denote by $[x \geq 5]$ the predicate satisfied by all states where $x$ is greater or equal to $5$, then we get that $wp[P_1]([x \geq 5]) = wp[x := -y]([x \geq 4]) = [y \leq -4]$. (The formal method to get this result is presented in \cite{Dijkstra76} and will be reminded in Section \ref{sec:preliminaries})\bigskip
+If we denote by $[x \geq 5]$ the predicate satisfied by all states where $x$ is greater or equal to $5$, then we get that $wp[P_1]([x \geq 5]) = wp[x := -y]([x \geq 4]) = [y \leq -4]$. (The formal method to get this result is presented in \cite{Dijkstra76} and will be reminded in Section \ref{sec:state})\bigskip
 
 Dijkstra's predicate transformer semantics was extended by McIver and Morgan \cite{McIver05} to fully probabilistic programs by changing the semantics, such that the weakest precondition $wp[P](\varphi)$ assigns to each state $\sigma$ the probability that the execution of the program $P$ in $\sigma$ terminates in a state satisfying $\varphi$, instead of assigning only $0$ or $1$ values meaning that the execution of $P$ will certainly or certainly not terminate in a state satisfying the postcondition. Note that applying the semantics of McIver and Morgan to nondeterministic programs, without any probabilistic choice, the results are the same as in Dijkstra's semantics.\newline
 By applying the semantics of McIver and Morgan to the program $P_0$ (note that, the way the program is written, the final state should not depend on the initial state in this example), we get that the probability, for each initial state, that the the final state satisfies $[x = 7]$ is $1-p$, which is intuitively expected (formally, this means that $wp[P_0]([x = 7])$ assigns to each state the constant $1-p$). Now, consider the subprogram $P_2$ of $P_0$:
@@ -144,14 +146,19 @@ This type of measure, however, does not give as much information as probabilitie
 
 Using possibilities instead of probabilities first seems not to be an interesting choice, since possibilities normally do not bear as much information as probabilities, as we said earlier. But in fact, possibility theory has already been studied \cite{WuChen08,WuChen11,WuChen12} in order to define predicate transformer semantics for fuzzy imperative languages (defined in \cite{Bueno93,Bueno97}, they are languages with more instructions based on possibilities, and are at least as expressive as GCL), and the authors obtained interesting semantics in which each possible outcome is taken in account (even for GCL programs). However, these languages do not include the probabilistic choice.\bigskip
 
-In this report, our goal is to give our own semantics of probabilistic nondeterministic programs, and more precisely an expected value semantics (which can be derived from predicate transformer semantics), where we consider expected values of fuzzy random variables (first defined in \cite{PuriRal86}, and then simplified in \cite{Shapiro09}). It is a way to extend the ideas presented in \cite{WuChen08,WuChen11,WuChen12} using possibility theory to the pGCL language presented in \cite{McIver05}.\bigskip
+In this report, our goal is to give our own semantics of probabilistic nondeterministic programs, and more precisely an expected value semantics (which can be derived from predicate transformer semantics), where we consider expected values of fuzzy random variables (first defined in \cite{PuriRal86}, and then simplified in \cite{Shapiro09}). It is a way to get a possibility-based semantics for pGCL programs, applying the idea of \cite{WuChen08,WuChen11,WuChen12} of using possibility theory to the pGCL language presented in \cite{McIver05}.\bigskip
 
-\todo{Insert the organisation of the paper when we are sure of the plan.}
+The report is organised as follows: In Section \ref{sec:related}, we quickly present the work of other authors using possibility theory to define semantics for language derived from GCL, or defining other semantics for pGCL. In Section \ref{sec:state}, we present the pGCL language introduced by McIver and Morgan in \cite{McIver05}, as well as their predicate transformer semantics (based on Dijkstra's semantics), and how it can be used to anticipate values of positive functions, and relate it to random variables. In Section \ref{sec:contribution}, we present our own semantics, based on the semantics of McIver and Morgan, but used to anticipate values of functions taking sets as values (to model the possibility of different values without more information, resulting of the nondeterministic choice), and explain how it counters the loss of information previously mentioned. The report is finally conclued in Section \ref{sec:conclusion}.
 %The report is organised as follows: In Section \ref{sec:preliminaries}, we notably recall elementary notions such as Hoare triples and explain Dijkstra's predicate transformer semantics for GCL programs (i.e. nondeterministic programs), based on \cite{Dijkstra76}. In Section \ref{sec:state}, we present the existing work of previous authors, notably the generalisation of Dijkstra's predicate transformer semantics to pGCL programs (i.e. probabilistic nondeterministic programs) \cite{McIver05}, how the semantics can be used to compute expected values of random variables \cite{McIver05}, and the use of possibility theory in order to define other semantics for GCL programs \cite{WuChen08,WuChen11,WuChen12}. In Section \ref{sec:contribution}, we present the notion of fuzzy random variables \cite{PuriRal86,Shapiro09}, as well as our own semantics, which allows the computation of expected values of fuzzy random variables with a weakest-precondition-style calculus. The report is concluded in \ref{sec:conclusion}.
 
 \todo{Make the notations uniform in the whole report: use $S$ (or $C$) in the rules, in the definitions, etc... And use $P$ when refering explicitely to a program defined as an example}
 \section{Related Work}
 \label{sec:related}
+
+In \cite{WuChen08}, the authors consider a fuzzy imperative language \cite{Bueno93,Bueno97}, which is an extended version of GCL with more instructions based on possibility theory (notably fuzzy assignments), but which does not include the probabilistic choice. They build mathematical tools (based on domain theory, more precisely on powerdomains), and present the semantics they intend to define with the tools.
+In \cite{WuChen12}, the same authors explicitely build two semantics based on the previous tools, namely a fuzzy predicate transformer semantics and a state transformer semantics, for program in the concerned fuzzy language, and prove the equivalence between the two semantic. In \cite{Tix09}, the authors develop other mathematical tools based an domain theory, and present as further work the idea of using their tools to develop a denotational semantics (otherwise known as state transformer semantics, an alternative semantics type to the predicate transformer semantics; both types are dual) for programs including probabilities and nondeterminism. (It is, to our knownledge, the only other attempt to define clearer semantics for languages including probabilities AND nondeterminism, but it focuses on another style of semantics.)
+
+
 
 %\section{Preliminaries}
 %\label{sec:preliminaries}
@@ -229,10 +236,9 @@ In this report, our goal is to give our own semantics of probabilistic nondeterm
 % =& \textnormal{ }wp[x := - y ]([x \geq 4]) = [-y \geq 4] = [y \leq -4] \\
 %\end{align*}
 	
-\section{State of the art}
+\section{State of the art: the language, and McIver and Morgan's semantics}
 \label{sec:state}
-In this section, we present the pGCL language and the vision of McIver and Morgan over weakest precondition calculus \cite{McIver05}, we quickly explain (see \cite{McIver05}) how this type of calculus can be exploited to compute expected values of random variables, and finally quickly present the current uses of possibility theory as a base for predicate transformer semantics in fuzzy languages.
-
+In this section, we present the pGCL language and the vision of McIver and Morgan over weakest precondition calculus \cite{McIver05}, and explain (\todo{insert reference here}) how this type of calculus can be exploited to compute expected values of random variables.
 	\subsection{The pGCL language}
 	The pGCL language is an extension of Dijkstra's GCL. It was first introduced in \cite{McIver05}, and includes a new instruction that GCL did not include: the probabilistic choice. Therefore, the pGCL language allows the generation of fully probabilistic programs. It is defined by the following grammar\footnote{The original GCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while } (\texttt{true}) \texttt{ do }\{ \texttt{skip} \}$}\footnote{The rules for nondeterminism were defined by Dijkstra in guarded commands \cite{Dijkstra76}, but McIver and Morgan used an equivalent grammar and added probabilistic choice to get the grammar presented here. }:\bigskip
 
@@ -255,8 +261,12 @@ Note that this grammar only has choice instructions with two outcomes; but combi
 	\end{definition}
 
     Let $P$ be a pGCL program and let $\varphi$ be a binary predicate.
-	What is the probability that the execution of $P$ in a state $\sigma$ is guaranteed to terminate in a state satisfying the postcondition $\varphi$ ? McIver and Morgan extended Dijkstra's vision of weakest precondition calculus, such that $wp[P](\varphi)(\sigma)$ is the answer, i.e. $wp[P](\varphi)$ is a predicate, and for each $\sigma \in \Sigma$, $wp[P](\varphi)(\sigma)$ is the probability that $\sigma$ satisfies $wp[P](\varphi)$, i.e. the probability that the execution of $P$ in $\sigma$ terminates in a state satisfying $\psi$.\newline
-	Therefore, $P$ is described by the semantics of McIver and Morgan as an object $wp[P]$ transforming the predicate $\varphi$ into the predicate $wp[P](\varphi)$. The rules\footnote{These rules correspond to the case where the nondeterministic choice is considered to be the demonic choice, as Dijkstra first intended.} for computing  $wp[P](\varphi)$ are given in Table \ref{table:rules_wp_pgcl}. 
+	What is the probability that the execution of $P$ in a state $\sigma$ is guaranteed to terminate in a state satisfying the postcondition $\varphi$ ? McIver and Morgan extended Dijkstra's vision of weakest precondition calculus, such that $wp[P](\varphi)(\sigma)$ is the answer, with the following definition:
+	\begin{definition}
+	If $P$ is a pGCL program, then the predicate transformer semantics of $P$ is given by $wp[P]$ (defined by the rules\footnote{These rules correspond to the case where the nondeterministic choice is considered to be the demonic choice, as Dijkstra first intended.} in Table \ref{table:rules_wp_pgcl}).\newline
+	$wp[P]$ is a predicate transformer, i.e. for all postconditions $\varphi$, $wp[P](\varphi)$ is a predicate, such that $\forall \sigma \in \Sigma$, $wp[P](\varphi)(\sigma)$ is the probability that the execution of $P$ in $\sigma$ terminates in a state satisfying $\varphi$
+	\end{definition}
+	Therefore, $P$ is described by the semantics of McIver and Morgan as an object $wp[P]$ transforming the predicate $\varphi$ into the predicate $wp[P](\varphi)$.
 	
 	\begin{table}
 \begin{center}
@@ -283,7 +293,10 @@ Note that this grammar only has choice instructions with two outcomes; but combi
 \caption{Rules for defining the predicate transformer $wp$}
 \label{table:rules_wp_pgcl}
 \end{table}
-The state $\sigma[x/A]$ is the state obtained when syntactically replacing the variable $x$ by the value of $A$ in $\sigma$; $[\![ b : true ]\!] $ is a binary predicate, evaluating to $1$ in $\sigma$ if and only if the boolean variable $b$ is true in $\sigma$ (and symmetrically for $[\![ b : false ]\!] $). Finally, the form lfp ($\lambda X. f(X)$) denotes the least fixed point of the application $f$ (where the $X$ are predicates). The value of the least fixed-point can be computed with Kleene's fixed-point theorem (under certain hypotheses, verified here; more details in Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}).\bigskip
+The state $\sigma[x/A]$ is the state obtained when syntactically replacing the variable $x$ by the value of $A$ in $\sigma$; $[\![ b : true ]\!] $ is a binary predicate, evaluating to $1$ in $\sigma$ if and only if the boolean expression $b$ is true in $\sigma$ (and symmetrically for $[\![ b : false ]\!] $). Finally, the form lfp ($\lambda X. f(X)$) denotes the least fixed-point of the application $f$ (where the $X$ are predicates). The value of the least fixed-point can be computed with Kleene's fixed-point theorem (under certain hypotheses, verified here; more details in Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}).\bigskip
+
+\begin{remark} We will often simplify the expressions in the table by writing for instance $\Min(wp[P_1](\varphi),wp[P_2](\varphi))$ instead of $\lambda\sigma. \Min(wp[P_1](\varphi)(\sigma),wp[P_2](\varphi)(\sigma))$, or $p\cdot wp[P_1](\varphi) + (1-p)\cdot wp[P_2](\varphi)$ instead of $\lambda\sigma. p\cdot wp[P_1](\varphi)(\sigma) + (1-p)\cdot wp[P_2](\varphi)(\sigma)$. But recall that these objects are predicates.
+\end{remark}
 	
 	\notsure{Note that the rules allow the computation of $wp[P](\varphi)$ for all arbitrary predicates $\varphi$, but in the practice, we only want to compute $wp[P](\varphi)$ where $\varphi$ is a binary predicate, because when checking programs, we want to verify whether the final states satisfy a property or not, and not to verify whether a final states satisfies a property with a certain probability. In the only cases where $\varphi$ is not a binary predicate, $\varphi$ will result from the computation of another weakest precondition $wp[P'](\psi)$} \bigskip
 	
@@ -310,25 +323,62 @@ Recall that $[x \geq 5](\sigma) = 1$ if $x \geq 5$ in $\sigma$ and $0$ else. The
 
 	One can also apply these rules to the program $P_0$ and get the results presented in Section \ref{sec:intro}. The calculation is done in Appendix \ref{subsec:wp_p0}. \todo{Maybe move this calculation here if there is enough place. It should be more logical, since it is our running example.}
 	
-	\subsection{Computation of expected values}
-	\todo{It is the same as computing the expected value of a random variable whose outcomes are known, and are (for each state) values of $\RRposi$. Explain that some results, as shown in the intro, seem counterintuitive.}
-	
+	\subsection{Anticipating values, link with random variables}
+    \label{subsec:anticipation}
+    
 	In the practice, weakest precondition calculus can be used to anticipate the value of certain functions. Recall that with the simple program $P_1$ given in Section \ref{sec:intro}, we proved that $wp[P_1]([x \geq 5]) = [y \leq -4]$. As $P_1$ is deterministic, we get that, if $\sigma$ satisfies $[y \leq -4]$, then the state obtained after executing $P_1$ in $\sigma$ satisfies $[x \geq 5]$; and if $\sigma$ does not satisfy $[y \leq -4]$, then the state obtained after executing $P$ in $\sigma$ does not satisfy $[x \geq 5]$. We can say that the function $[y \leq -4]$ anticipates the value of $[x \geq 5]$ after the execution of $P_1$.\bigskip
 	
 	\todo{Write references for what follows}
-It is in fact possible, in the deterministic case, to anticipate values of other functions, such as the function associating to $\sigma$ the value of $x^2$, or the value of $|\textnormal{sin}(y)|$ in $\sigma$. However, due to certain constraints in order to ensure the existence of least fixed-points and make the computation possible, we must restrict ourselves to functions from $\sigma$ to $\RRposi$. \footnote{With this restriction, a complete partial order can be defined on $\{f \,|\, f : \Sigma \rightarrow \RRposi \}$ and Kleene's fixed point theorem can be applied. See Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}} That restriction is not a problem in practice, as one can always decompose an arbitrary function as two functions, namely, its absolute value and its sign. \bigskip
+It is in fact possible, in the deterministic case, to anticipate values of other functions, such as the function associating to $\sigma$ the value of $x^2$ in $\sigma$, or the value of $|\textnormal{sin}(y)|$ in $\sigma$. However, due to certain constraints in order to ensure the existence of least fixed-points and make the computation possible, we must restrict ourselves to functions from $\Sigma$ to $\RRposi$ (where $\RRposi = [0;+\infty]$). Let $\mathcal{F} = \{f \,|\, f : \Sigma \rightarrow \RRposi \}$. \footnote{With this restriction, a complete partial order can be defined on $\mathcal{F}$ and Kleene's fixed point theorem can be applied. See Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}} That restriction is not a problem in practice, as one can always decompose an arbitrary function as two functions, namely, its absolute value and its sign (and carefully redefine all operations between functions, such as $+$, $\times$, etc.). \bigskip
 
-This computation can still be extended to nondeterministic programs (by considering that, in the nondeterministic choice, the anticipated value is the least one), and to fully probabilistic programs, by taking the ponderated mean between the two possible values. The rules of computation are rigorously the same as in Table \ref{table:rules_wp_pgcl}, but are applied to functions from $\Sigma$ to $\Rightarrow$.
+Therefore, it is possible to extend the previous predicate transformer semantics in an "anticipated-value" semantics for deterministic programs, by viewing programs as function transformers $\mathcal{F} \rightarrow \mathcal{F}$.
+The anticipation of values can be extended to nondeterministic programs (by considering that, in the nondeterministic choice, the anticipated value is the least one), and to fully probabilistic programs, by taking the ponderated mean between the two possible values. The rules of computation are rigorously the same as in Table \ref{table:rules_wp_pgcl}. But in this case, we apply them to a function $f \in \mathcal{F}$, and obtain another function $wp[P](f) \in \mathcal{F}$. (Note that predicates are also elements of $\mathcal{F}$. Hence, the previous computations still work in this context.)
 
-\begin{example} Consider the program $P_1$ from Section \ref{sec:intro}, and the function $\sigma \rightarrow x^2$ (where $x$ is replaced by its value in $\sigma$). Its value after the execution of $P_1$ can be computed with:
+\begin{notation} In the following, we will denote by $x_\sigma$ the value of the program variable $x$ in $\sigma$, and we will assimilate the program variable $x$ to the function $\underline{x} : \sigma \rightarrow x_\sigma$. (This is a simplified notation. In the practice, we should consider one function giving the absolute value of $x_\sigma$ and another giving its sign.) Hence, $\underline{x} \in \mathcal{F}$, it is a function giving the value of $x$ in each state.
+\end{notation}
+
+\begin{example} Consider the program $P_1$ from Section \ref{sec:intro}, and the function $\underline{x}^2 \in \mathcal{F}$. Its value after the execution of $P_1$ can be computed with:
 \begin{align*}
-& \textnormal{ }wp[x := - y ; x := x+1](x^2) = wp[x := - y ](wp[x := x+1](x^2)) \\
- =& \textnormal{ }wp[x := - y ]((x+1)^2) = = (1-y)^2  \\
+& \textnormal{ }wp[x := - y ; x := x+1](\underline{x}^2) = wp[x := - y ](wp[x := x+1](\underline{x}^2)) \\
+ =& \textnormal{ }wp[x := - y ]((\underline{x}+1)^2) = (1-\underline{y})^2  \\
+\end{align*}
+For example, if $(1-\underline{y})^2(\sigma) = 4$, then $\sigma$ is a state where $(1-y_\sigma)^2 = 4$, for instance where $y_\sigma = 3$. Then by executing $P_1$ in $\sigma$, $x$ is set to $-3$, and then to $-2$. In the final state $\sigma'$, we have $x_{\sigma'}^2 = 2$. Therefore, $(1-\underline{y})^2$ anticipates the value that $\underline{x}^2$ takes after the execution of the program.
+\end{example}
+
+\begin{example} Consider the program $P_0$ from Section \ref{sec:intro}, we can anticipate the value of the variable $x$ by computing the anticipate value of the function $\underline{x}$ (we should normally anticipate the value of $\underline{|x|}$, but we easily see that they are the same in this context):
+\begin{align*}
+wp[P_0](\underline{x}) &= wp[ \{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \} ](\underline{x}) \\
+&= p\cdot wp[ \{x := 2\} \square \{x := 5\} ](x) + (1-p)\cdot wp[x := 7](\underline{x}) \\
+&= p\cdot\Min(wp[x := 2](\underline{x}),wp[x := 5](\underline{x})) + (1-p)\cdot wp[x := 7](\underline{x}) \\
+&= \lambda\sigma. p\cdot\Min(wp[x := 2](\underline{x})(\sigma),wp[x := 5](\underline{x})(\sigma))\\ & + (1-p)\cdot wp[x := 7](\underline{x})(\sigma) \\
+&= \lambda\sigma. p\cdot\Min(\underline{x}(\sigma[x/2]),\underline{x}(\sigma[x/5])) + (1-p)\cdot \underline{x}(\sigma[x/7]) \\
+&= \lambda\sigma. p\cdot\Min(2,5) + (1-p)\cdot 7 \\
+&= \lambda\sigma. 2p+7(1-p)
 \end{align*}
 \end{example}
-	\todo{Apply to $P_0$ and underline the problem of counterintuitive results}
-	\subsection{Chinese work}
-	\todo{Obviously change this title when you have a better idea.}
+We leave the result in this form to underline interesting remarks.
+
+\begin{remark}
+For each $\sigma$, $wp[P_0](\underline{x})(\sigma)$, which is the anticipated value of $x$ after the execution of $P_0$ in $\sigma$, has the form of the expected value $E(X)$ of a positive random variable $X$ taking the value $2$ with the probability $p$, and the value $7$ with the probability $1-p$.\newline
+\end{remark}
+\begin{theorem}
+Let $P$ be a probabilistic program (without nondeterminism), let $\sigma$ be an initial state, and let $f \in \mathcal{F}$ be a function. For each $\omega$, the execution of $P$ in $\omega$ can be informally divided as several "branches", called execution schemes $\omega$ (at each choice, the current branch is divided into two branches). We consider an execution scheme to be a full execution, i.e. at the end of an $\omega$, $P$ terminated, or is looping infinitely. Let $\Omega_\sigma$ be the set of execution schemes obtained when executing $P$ in $\sigma$. A probability can be assigned to each $\omega \in \Omega_\sigma$. We can therefore see the value of $f$ after the execution of $P$ in $\sigma$ as a positive random variable $X_\sigma : \Omega_\sigma \rightarrow \RRposi$.\newline
+Thus, $wp[P](f) = \lambda\sigma.E(X_\sigma)$.
+\end{theorem}
+This result can be more clearly observed in Example \ref{ex:diff_rv} in Subsection \ref{subsec:ex_ant}.
+\todo{Maybe move the example here.}
+\begin{remark}
+The previous theorem can be extended to fully probabilistic programs by applying rules in Table \ref{table:rules_wp_pgcl} and by considering the nondeterministic choice as the demonic choice. Note however that the $\Omega_\sigma$ that we obtain depend on the postcondition we are computing (as shown in Example \ref{ex:diff_ex_sch} in Subsection \ref{subsec:ex_ant}), because the the demonism in nondeterministic choice will restrict each of these choices to one outcome, depending on the postcondition.\newline
+\end{remark}
+\begin{remark}
+The result of the computation of $wp[P_0](\underline{x})$ still does not take in account the possibility that $x$ can take the value $5$.
+Symmetrically, if the nondeterministic choice was to be considered as the angelic choice, we would get that $wp[P_0](\underline{x}) = 5p+7(1-p)$ and one result would be missing.
+\end{remark}
+
+These results are therefore counterintuitive. At this point, we defined our own semantics by considering fuzzy random variables, instead of random variables.
+	
+%	\subsection{Chinese work}
+%	\todo{Obviously change this title when you have a better idea.}
 %\temp{
 %In this whole report, we will primarly consider the pGCL language, presented in \cite{McIver05}, and defined by the following grammar\footnote{The original pGCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while} (\texttt{true})\{ \texttt{skip} \}$}:
 %
@@ -343,55 +393,73 @@ This computation can still be extended to nondeterministic programs (by consider
 %Note that we are using choice instructions with only two choices, but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using the loop) of outcomes.\bigskip
 %}
 
-\section{Contribution}
+\section{A new semantics based on possibilities}
 \label{sec:contribution}
 
-In this section, we consider programs over the language presented in Section \ref{sec:preliminaries}, and our goal is to define clearer semantics for these programs as the semantics we presented before. Recall that we showed in Section \ref{sec:preliminaries} that weakest-precondition calculus could be used in order to compute expected values of random variables. Our main idea here is to combine the concept of \textit{Fuzzy random variable} (introduced in \cite{PuriRal86}, and simplified in \cite{Shapiro09}) with the computation of expected values.\newline
+In this section, we consider programs over the pGCL language presented in Section \ref{sec:state}. As we stated before, previous existing semantics give nonsatisfying results, both when computing weakest preconditions of predicates in fully probabilistic programs and when anticipating values of functions in fully probabilistic programs. Our goal is to define a new semantics, which should be based on possibility theory, and would more clearly represent each possible outcome.  Recall that we mentioned in Section \ref{sec:state} that weakest-precondition calculus could be used in order to anticipate values of functions of $\mathcal{F}$ (i.e. functions from $\Sigma$ to $\RRposi$), and that the corresponding computation in fact gave, for each state $\sigma$, the expected value of a random variable (i.e. the value of the function we are anticipating, after the execution of the program in $\sigma$). Our main idea here is to replace functions from $\Sigma$ to $\RRposi$ by functions from $\Sigma$ to $\mathcal{P}(\RRposi)$, and to identify the anticipation of their values as the expected value of \textit{Fuzzy random variable} (introduced in \cite{PuriRal86}, and simplified in \cite{Shapiro09}).
 
 \subsection{Fuzzy random variables}
-Let $\Sigma$ be the set of states. We consider that the variables in our programs can only take \underline{real positive} values.\footnote{This is due to constraints explained further. But note that we can implement an arbitrary real variable by two variables, one for its absolute value, and one for its sign.} We adapted the following definition from \cite{PuriRal86}.
+%Let $\Sigma$ be the set of states. We consider that the variables in our programs can only take \underline{real positive} values.\footnote{This is due to constraints explained further. But note that we can implement an arbitrary real variable by two variables, one for its absolute value, and one for its sign.} 
+We adapted the following definition from \cite{PuriRal86}.
 
 \begin{definition}{\textnormal{(Fuzzy Random Variable)\newline}}
- A Fuzzy Random Variable (short: FRV) is a mapping $X$ from the set of states $\Sigma$ to the powerset $P(\RRposi)$. This means that, if $X$ is an FRV, then for all $\sigma \in \Sigma$, $X(\sigma)$ is a subset of $\RRposi$. In fact, it is a set of possible values for $X$ in the state $\sigma$.
+ A Fuzzy Random Variable (short: FRV) is a mapping $X$ from a probabilistic space $(\Omega,\mathcal{A},Pr)$ to the powerset $P(\RRposi)$. This means that, if $X$ is an FRV, then for all $\omega \in \Omega$, $X(\omega)$ is a subset of $\RRposi$. In fact, it is a set of possible values for $X$ in the event $\omega$.
 \end{definition}
-\begin{example}
- In the following, for each program variable $x$, we denote by $\underline{x}$ the FRV such that, for all $\sigma \in \Sigma$, $\underline{x}(\sigma) = \{ x_{\sigma} \}$, meaning that $\underline{x}$ associates to each state $\sigma$ the singleton containing the value $x_\sigma$, which is the value of the program variable $x$ in the set $\sigma$. (Recall that each state is characterized uniquely by a tuple containing the values of each variable in a given order.). Therefore, we can say that the FRV $\underline{x}$ models the program variable $x$.
-\end{example}
 
-A fuzzy random variable $X$ over a program can model several concepts. For instance, it can be used to model the runtime of a program executed in a state $\sigma$ (which is why we chose to include $\infty$); in this example, $X(\sigma)$ would give all possible runtimes for the execution of one program starting from $\sigma$. It can also model the value of a program variable (or any function over the program variables) after the execution of a program.\newline
+In \cite{PuriRal86}, there exists a definition of the expected value $E(X)$ of an arbitrary fuzzy random variable $X$ over an arbitrary probabilistic space. However, in our context, it suffices to consider $\Omega$ as a countable space $\{\omega_1, \omega_2, \dots \}$ (recall that our events are execution schemes) and fuzzy random variables taking as values only sets of positives values (as we previously defined them). Then, by using the definition of expected value in \cite{PuriRal86} and applying our simplifications, we come to the following definition of the expected value, which is sufficient in our context:
+
+\begin{definition}
+If $X$ is a fuzzy random variable from $\Omega$ to $\RRposi$, then we can define the expected value $E(X)$ as follows:
+$$E(X) = \{ \sum_{n = 1}^{+\infty} t_iPr(\omega_i) \,|\, \forall i \in \NN^*, t_i \in X(\omega_i) \} \subset \RRposi$$
+\end{definition}
+One can interprete this definition as follows: if $X$ is a positive fuzzy random variable (i.e. a random variable associating to each event a set of positive values), then $E(X)$ is the set obtained by computing all possible (even infinite) averages (by picking one value in each $X(\omega_i)$).
+
+%\begin{example}
+% In the following, for each program variable $x$, we denote by $\underline{x}$ the FRV such that, for all $\sigma \in \Sigma$, $\underline{x}(\sigma) = \{ x_{\sigma} \}$, meaning that $\underline{x}$ associates to each state $\sigma$ the singleton containing the value $x_\sigma$, which is the value of the program variable $x$ in the set $\sigma$. (Recall that each state is characterized uniquely by a tuple containing the values of each variable in a given order.). Therefore, we can say that the FRV $\underline{x}$ models the program variable $x$.
+%\end{example}
+%
+%A fuzzy random variable $X$ over a program can model several concepts. For instance, it can be used to model the runtime of a program executed in a state $\sigma$ (which is why we chose to include $\infty$); in this example, $X(\sigma)$ would give all possible runtimes for the execution of one program starting from $\sigma$. It can also model the value of a program variable (or any function over the program variables) after the execution of a program.\newline
+
 % For instance, for any program variable $x$, with the previous notations, for all $\sigma \in \Sigma$, $\underline{x}(\sigma) = \{ x \}$ is the expected value of the program variable $x$ after executing the program $\texttt{skip}$ in $\sigma$.\newline
 % As all previous computations can be obtained from program variables (for instance, the runtime of a program (in the sense of "number of instructions executed before termination") can be obtained by adding a program variable $t$ representing the current runtime, initially $0$, and incrementing it at each instruction), we will in the following only consider computation of expected values of fuzzy random variables characterizing the value of a program variable after the execution of the program in one state.\newline
 
-\subsection{Contribution: the weakest-precondition-style calculus of expected values of fuzzy random variables}
-Let $F = \{f \,|\, f : \sigma \rightarrow P(\RRposi) \}$ be the set of fuzzy random variables, and $Progs$ be the set of pGCL programs. We define the following application:
+\subsection{Contribution: the weakest-precondition-style calculus of anticipation of values of set-valued functions, link with fuzzy random variables}
+Let $\mathcal{F}' = \{f \,|\, f : \sigma \rightarrow P(\RRposi) \}$ be the new set of functions whose values we want to anticipate. What it intuitively means is that $f$ maps each $\sigma$ to a set of "possible values". (As we previously explained, restriction to positive values only is not a problem in the practice.)
+\begin{example}
+In the following, we redefine the application $\underline{x}$ by : $\underline{x} = \lambda\sigma. \{x_\sigma\}$, meaning that $\underline{x}$ associates to $\sigma$ a set containing the only possible value for $x$ in this state (which is directly accessible, since each state is characterized uniquely by the values of each variable).
+\end{example}
 
+We replace the $wp$ operator by the following operator:
 \begin{definition}
- $ev : (Progs) \rightarrow (F \rightarrow F)$ is an application mapping each program $S$ to its FRV transformer semantics. This means that, for all $S \in Progs$, $ev[S]$ transforms a FRV $X \in F$ in another FRV $ev[S](X)$.
+ 	If $P$ is a pGCL program, then our \todo{find a proper name} semantics of $P$ is given by $ev[P]$ (defined by the rules in Table \ref{table:rules_ev}).\newline
+	$ep[P]$ is a function transformer, i.e. for all functions $f \in \mathcal{F}'$, then $ev[P](f) \in \mathcal{F}'$.
 \end{definition}
-Concretely, if $X$ is a FRV (i.e. an application mapping each state $\sigma$ to a subset $X(\sigma)$ of $\RRposi$), then $ev[S](X)(\sigma)$ is the set of possible expected values of the FRV $X$ after executing $S$ in the state $\sigma$.\newline
-For instance, if we consider a program variable $x$, then the FRV $\underline{x}$ maps each state $\sigma$ to the set $\{x_\sigma\}$. Our goal is that the FRV $\underline{x}$ is transformed by $ev[S]$ into the FRV $ev[S](\underline{x})$, which maps each $\sigma$ to the set $ev[S](\underline{x})(\sigma)$ of possible values of the variable $x$ after executing $S$ in the state $\sigma$. Therefore, we can say that $ev[S](\underline{x})(\sigma)$ is the \emph{expected value} (or rather \emph{set of possible expected values}) of the FRV $\underline{x}$ after executing $S$ in the state $\sigma$; or, with other words, the set of possible expected values of the program variable $x$ after executing $S$ in $\sigma$.\newline
+
+Recall that we mentioned in Subsection \ref{subsec:anticipation} that, if $f \in \mathcal{F}$ and if $P$ is a pGCL program, then the value of $f$ after the execution of $P$ in a state $\sigma$ was given by a random variable $X_\sigma$, and $wp[P](f)$ in fact gave $E(X_\sigma)$ for each $\sigma$.\newline
+Symmetrically, here, if $f \in \mathcal{F}'$, then the value of $f$ (which is a set) after the execution of $P$ in a state $\sigma$ is given by a fuzzy random variable $X_\sigma$, and $ev[P](f)$ in fact gives $E(X_\sigma)$ (which is a set) for each $\sigma$. This confirms that $ev[P]$ transforms a function of $\mathcal{F}'$ in another function of $\mathcal{F}'$.\newline
+%Concretely, if $X$ is a FRV (i.e. an application mapping each state $\sigma$ to a subset $X(\sigma)$ of $\RRposi$), then $ev[S](X)(\sigma)$ is the set of possible expected values of the FRV $X$ after executing $S$ in the state $\sigma$.\newline
+%For instance, if we consider a program variable $x$, then the FRV $\underline{x}$ maps each state $\sigma$ to the set $\{x_\sigma\}$. Our goal is that the FRV $\underline{x}$ is transformed by $ev[S]$ into the FRV $ev[S](\underline{x})$, which maps each $\sigma$ to the set $ev[S](\underline{x})(\sigma)$ of possible values of the variable $x$ after executing $S$ in the state $\sigma$. Therefore, we can say that $ev[S](\underline{x})(\sigma)$ is the \emph{expected value} (or rather \emph{set of possible expected values}) of the FRV $\underline{x}$ after executing $S$ in the state $\sigma$; or, with other words, the set of possible expected values of the program variable $x$ after executing $S$ in $\sigma$.\newline
 
 
-We give rules in Table \ref{table:rules_ev} of a predicate-transformer-style calculus for the computation of expected values.\newline
 \begin{table}
 \begin{center}
 \begin{tabular}{|p{3cm}|p{9cm}|}
  \hline
- \thead{$S$} & \thead{$ev[S](X)$} \\
+ \thead{$S$} & \thead{$ev[S](f)$} \\
  \hline
- \thead{\texttt{skip}} & \thead{$X$} \\
+ \thead{\texttt{skip}} & \thead{$f$} \\
  \hline
- \thead{$y := A$} & \thead{$\lambda\sigma.X(\sigma[y/A])$} \\
+ \thead{$x := A$} & \thead{$\lambda\sigma.f(\sigma[y/A])$} \\
  \hline
- \thead{$S_1 ; S_2$} & \thead{$ev[S_1](ev[S_2](X))$} \\
+ \thead{$S_1 ; S_2$} & \thead{$ev[S_1](ev[S_2](f))$} \\
  \hline
- \thead{$S_1 [p] S_2$} & \thead{$\lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in ev[S_2](X)(\sigma) \}$} \\
+ \thead{$S_1 [p] S_2$} & \thead{$\lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \}$} \\
  \hline
- \thead{$\{S_1\} \square \{S_2\}$} & \thead{$\lambda\sigma. ev[S_1](X)(\sigma) \cup ev[S_2](X)(\sigma)$} \\
+ \thead{$\{S_1\} \square \{S_2\}$} & \thead{$\lambda\sigma. ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma)$} \\
  \hline
- \thead{$\texttt{if } (b) \texttt{ then } \{ S_1 \}$ \\ $\texttt{ else } \{ S_2 \}$} & \thead{$\lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$ \\$t_1 \in ev[S_1](X)(\sigma), t_2 \in ev[S_2](X)(\sigma) \}$} \\
+ \thead{$\texttt{if } (b) \texttt{ then } \{ S_1 \}$ \\ $\texttt{ else } \{ S_2 \}$} & \thead{$\lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$ \\$t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \}$} \\
  \hline
- \thead{$\texttt{while }(b) \texttt{ do }\{S\}$} & \thead{lfp ($\lambda Y. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$\\$t_1 \in ev[S](Y)(\sigma), t_2 \in X(\sigma) \}$))} \\
+ \thead{$\texttt{while }(b) \texttt{ do }\{S\}$} & \thead{lfp ($\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$\\$t_1 \in ev[S](X)(\sigma), t_2 \in f(\sigma) \}$))} \\
  \hline
 \end{tabular}
 \end{center}
@@ -399,7 +467,7 @@ We give rules in Table \ref{table:rules_ev} of a predicate-transformer-style cal
 \label{table:rules_ev}
 \end{table}
 
-Consider the guideline example $P$: $\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}$. We want to compute the expected value of $x$ after the execution of $P$. Thus, we have to determine $ev[P](\underline{x})$,which will map each state $\sigma$ to the expected value of $x$ after executing $P$ in $\sigma$. It is a function of $\sigma$, but the form of $P$ gives the intuition that it will be a constant function, not depending on $\sigma$.\newline
+Consider the running example $P$: $\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}$. The value of $x$ after the execution of $P$ in a given initial state is given by a fuzzy random variable. We want to compute its expected value. Thus, we have to determine $ev[P](\underline{x})$. It is a function of $\sigma$, but the form of $P$ gives the intuition that it will be a constant function, not depending on $\sigma$.\newline
 With the rules presented in Table \ref{table:rules_ev}, we can see that this requires first to compute the functions $ev[\{x := 2\} \square \{x := 5\}](\underline{x})$ and $ev[x := 7](\underline{x})$; besides, the former requires to compute $ev[x := 2](\underline{x})$, $ev[x := 5](\underline{x})$.\newline
 
 We get that:
@@ -415,16 +483,22 @@ This means that the possible expected values of $x$ after executing $\{x := 2\} 
 
 Finally, 
 \begin{align*}
-ev[P](\underline{x}) &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[\{x := 2\} \square \{x := 5\}](\underline{x})(\sigma), t_2 \in ev[x := 7](\underline{x})(\sigma) \} \\
+ev[P_0](\underline{x}) &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[\{x := 2\} \square \{x := 5\}](\underline{x})(\sigma), t_2 \in ev[x := 7](\underline{x})(\sigma) \} \\
 &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in \{2,5\}, t_2 \in \{7\} \} \\
 &= \lambda\sigma. \{2p+7(1-p),5p+7(1-p) \} 
 \end{align*}
 
+Contrary to what was observed with the semantics of McIver and Morgan, no information is lost here.
+The results we just showed means that, when we execute $P_0$ in a state $\sigma$, there are two possible values for the program variable $x$ after the execution. The first one results of the case where $x := 2$ is executed in the nondeterministic choice. In this case, anticipating the value of $x$ is the same as computing the expected value of a classical random variable as we did in Subsection \ref{subsec:anticipation}. The second one is obtained symmetrically in the case where $x := 5$ is executed.\newline
+The link with fuzzy random variables is clearer, as the previous results shows that, for each $\sigma$, $ev[P_0](\underline{x})(\sigma)$ is the expected value of a fuzzy random variable taking the value $\{2,5\}$ with a probability $p$ (this corresponds to the first execution scheme, where the left branch of the probabilistic choice is executed. And this case, $x$ has indeed a probability $p$ of being set to $2$ or $5$. Both choices are \underline{possible}, and that is why both values belong to the set), and the value $\{7\}$ with a probability $1-p$.
+\bigskip
 
+Finally, we can explain how our semantics is related to possibility theory. Recall that McIver and Morgan extended $wp$ to fully probabilistic programs such that, if $\varphi$ is a predicate, then $wp[P](\varphi)(\sigma)$ is the probability that $P$, when executed in $\sigma$, terminates in a state where $\varphi$ is satisfied.\newline
+If we denote by $\mathds{1}_U$ the indicator function of a set $U$, and if we take $f \in \mathcal{F}'$, then $\mathds{1}_{ev[P](f)(\sigma)}(a)$ is the possibility that $a$ is an expected value of $f$ after the execution of $P$ in the state $\sigma$. And we can extend this result: if $V \subset \RRposi$, then $\mathds{1}_{ev[P](f)(\sigma)}(V) = \Sup_{a \in V}(\mathds{1}_{ev[P](f)(\sigma)}(a))$ is the possibility that at least one value in $V$ is an expected value of $f$ after the execution of $P$ in $\sigma$.
 
 \section{Conclusion}
-\todo{Explain that, for a program $S$, by considering each of its variables $x$ and computing $ev[S](\underline{x})$, we are able to fully characterize the program $S$ and get an understanding of what it does. Explain that it is clearer than what was done before.}
 \label{sec:conclusion}
+In this report, we presented the vision of weakest-precondition calculus over pGCL program, detailed by McIver and Morgan in \cite{McIver05}. We explained how the weakest-precondition calculus could be used in order to anticipate the values of particular functions (the restriction to positive functions is due to constraints of having a complete partial order over the set of functions in order to ensure the existence of least fixed-points and make the computation possible), and explained the link with random variables, i.e. the value of a function after the execution of program in a given initial state is a random variable, and the weakest precondition calculus gives access to its expected values. We underlined that nevertheless, the results obtained with the semantics of McIver and Morgan were not satisfying with the demonic choice, and neither with the angelic choice, as both conventions omitted essential information. Finally, we presented the notion of fuzzy random variables, and our own semantics, where we anticipate values of functions taking not positive real numbers as values, but set of positive real numbers. We explained the link between our semantics and the expected value of fuzzy random variables.
 
 
 \bibliography{ref1}{}
@@ -442,7 +516,7 @@ Let $P$ be a set with a partial order $\leq$.
 $P$ is a \emph{complete partial order} if the following conditions are satisfied:
 \begin{itemize}
 \item $\leq$ has a minimal element, denoted $\bot$ (such that $\forall x \in P$, $\bot \leq x$)
-\item for each subset $S = \{x_1, x_2, \dots \} \subset P$ where $x_1 \leq f_2 \leq \dots $, $S$ has a least upper bound $\Sup(S)$ in $P$.
+\item for each subset $S = \{x_1, x_2, \dots \} \subset P$ where $x_1 \leq fx2 \leq \dots $, $S$ has a least upper bound $\Sup(S)$ in $P$ (Such a set $S$ is called a \emph{chain})
 \end{itemize}
 \end{definition}
 
@@ -476,7 +550,7 @@ For each $\sigma$, $f(\sigma)$ is correctly defined: as the set $\{f_n(\sigma) \
 \end{itemize}
 \end{proof}
  
- Note that, with an analogue proof, if we denote by $\mathcal{F}$ the set of functions $\{f \,|\, f : \Sigma \rightarrow \RRposi\}$ (where $\RRposi = [0;+\infty]$ with $+\infty$ included), and by $\leq_{\mathcal{F}}$ the canonical pointwise order over $\mathcal{F}$, we can prove that $(\mathcal{F},\leq_{\mathcal{F}})$ is a complete partial order.
+ Note that, with an analogue proof, if we denote by $\mathcal{F}$ the set of functions $\{f \,|\, f : \Sigma \rightarrow \RRposi\}$ (where $\RRposi = [0;+\infty]$ with $+\infty$ included), and by $\leq_{\mathcal{F}}$ the canonical pointwise order over $\mathcal{F}$, we can prove that $(\mathcal{F},\leq_{\mathcal{F}})$ is a complete partial order. The inclusion of $+\infty$ in the set of values taken by the function is necessary, otherwise the proof does not work, we can find chains for which the $\Sup$ does not exist.
  
 \todo{Prove that the function constructed at then end of the Table \ref{table:rules_wp_pgcl} is indeed monotone (or Scott-Continuous ?). To that extent, prove inductively that $wp[P]$ is also monotone (or Scot-contiuous ?)}
 
@@ -508,10 +582,208 @@ wp[P_0](\varphi) &= wp[\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}](\va
 
 Now, we can try replacing $\varphi$ by interesting postconditions.
 \begin{itemize}
-\item If $\varphi = [x = 7]$, then for each $\sigma$, we get $[x = 7](\sigma[x/2]) = 0$, $[x = 7](\sigma[x/5]) = 0$ and $[x = 7](\sigma[x/7]) = 1$, and therefore, $wp[P_O]([x = 7]) = \lambda\sigma. (1-p)$
-\item If $\varphi = [x = 2]$, then for each $\sigma$, we get $[x = 2](\sigma[x/2]) = 1$, $[x = 2](\sigma[x/5]) = 0$ and $[x = 2](\sigma[x/7]) = 0$, and therefore, $wp[P_O]([x = 2]) = \lambda\sigma. 0$ (and symmetrically, $wp[P_O]([x = 5]) = \lambda\sigma. 0$)
-\item If $\varphi = [x = 2 \textnormal{ OR } x = 5]$, we get $[x = 2 \textnormal{ OR } x = 5](\sigma[x/2]) = 1$, $[x = 2 \textnormal{ OR } x = 5](\sigma[x/5]) = 1$ and $[x = 2 \textnormal{ OR } x = 5](\sigma[x/7]) = 0$, and therefore, $wp[P_O]([x = 2 \textnormal{ OR } x = 5]) = \lambda\sigma. p$
+\item If $\varphi = [x = 7]$, then for each $\sigma$, we get $[x = 7](\sigma[x/2]) = 0$, $[x = 7](\sigma[x/5]) = 0$ and $[x = 7](\sigma[x/7]) = 1$, and therefore, $wp[P_0]([x = 7]) = \lambda\sigma. (1-p)$
+\item If $\varphi = [x = 2]$, then for each $\sigma$, we get $[x = 2](\sigma[x/2]) = 1$, $[x = 2](\sigma[x/5]) = 0$ and $[x = 2](\sigma[x/7]) = 0$, and therefore, $wp[P_0]([x = 2]) = \lambda\sigma. 0$ (and symmetrically, $wp[P_0]([x = 5]) = \lambda\sigma. 0$)
+\item If $\varphi = [x = 2 \textnormal{ OR } x = 5]$, we get $[x = 2 \textnormal{ OR } x = 5](\sigma[x/2]) = 1$, $[x = 2 \textnormal{ OR } x = 5](\sigma[x/5]) = 1$ and $[x = 2 \textnormal{ OR } x = 5](\sigma[x/7]) = 0$, and therefore, $wp[P_0]([x = 2 \textnormal{ OR } x = 5]) = \lambda\sigma. p$
 \end{itemize}
 These are precisely the results stated in Section \ref{sec:intro}.
+
+\subsection{Example of anticipation of values in Section \ref{subsec:anticipation}}
+\label{subsec:ex_ant}
+
+\begin{example}
+\label{ex:diff_rv}
+Here is an example of program where the random variables associated to the anticipated value differ, depending on the initial state.
+$$P_3 : \{x := y+1\} [p] \{x := y-1\}$$
+The value of $y$ is unknown and depends on the initial state.
+Let $\sigma \in \Sigma$ be an initial state. Consider that we want to anticipate the value of the program variable $x$ (and therefore, of the function $\underline{x}$). 
+Two execution schemes are possible:
+\begin{itemize}
+\item $\omega_1$, with probability $p$, executes $x := y+1$
+\item $\omega_2$, with probability $1-p$, executes $x := y-1$
+\end{itemize}
+When computing the anticipated value of $\underline{x}$, we get:
+\begin{align*}
+wp[P_3](\underline{x})(\sigma) &= p\cdot wp[x := y+1](\underline{x})(\sigma)+(1-p)\cdot wp[x := y-1](\underline{x})(\sigma)\\
+&= p \cdot \underline{x}(\sigma[x/y+1])+(1-p)\cdot \underline{x}(\sigma[x/y-1]) \\
+&= p(y_{\sigma}+1)+(1-p)(y_{\sigma}-1)
+\end{align*}
+Therefore:
+$$wp[P_3](\underline{x}) = p(\underline{y}+1)+(1-p)(\underline{y}-1)$$
+In this example, it is clear that for each $\sigma$, $wp[P_3](\underline{x})$ appears as the expected value of a random variable, taking the value $(y_{\sigma}+1)$ with probability $p$ and the value $(y_{\sigma}-1)$ with probability $1-p$. However, this random variable depends on $\sigma$. Therefore, when you change $\sigma$, you change the random variable.
+\end{example}
+
+\begin{example}
+\label{ex:diff_ex_sch}
+Here is an example of program where the execution scheme differ, depending on the postcondition.
+Consider the program $P_0$ defined in Section $1$.
+\begin{itemize}
+\item When considering as postcondition the predicate $[x = 2]$, we get two execution schemes:
+\begin{itemize}
+\item $\omega_1$ (executed with a probability $p$), executing the left part of the probabilistic choice, and then automatically picking the least desired outcome in the nondeterministic choice, i.e. $x := 5$
+\item $\omega_2$ (executed with a probability $1-p$), executing the right part of the probabilistic choice
+\end{itemize}
+\item When considering as postcondition the predicate $[x = 5]$, we get two other execution schemes:
+\begin{itemize}
+\item $\omega_1$ (executed with a probability $p$), executing the left part of the probabilistic choice, and then automatically picking the least desired outcome in the nondeterministic choice, i.e. $x := 2$
+\item $\omega_2$ (executed with a probability $1-p$), executing the right part of the probabilistic choice
+\end{itemize}
+\end{itemize}
+\end{example}
+
+\subsection{Anticipation of values of set-valued functions in Section \ref{sec:contribution}}
+Recall that we defined $\mathcal{F}' = \{f : \,|\, f : \Sigma \rightarrow \mathcal{P}(\RRposi) \}$, and we defined the semantics of the pGCL program $P$ as a transformer $ev[P]$, transforming $f \in \mathcal{F'}$ in $ev[P](f) \in \mathcal{F}'$. But for the definition of $ev$ to make sense (i.e. for the least fixed-point in the loop rule to exist, by applying Kleene's Theorem), we want to prove two points:
+\begin{enumerate}
+\item $\mathcal{F}'$ is a complete partial order.
+\item For all programs $P$, the function transformer $ev[P] : \mathcal{F}' \rightarrow \mathcal{F}'$ is monotone (this is sufficient to make the function whose least fixed-point is calculated monotone)
+\end{enumerate}
+\bigskip
+
+We define the lower closure of a subset of $\RRposi$.
+\begin{definition}
+If $U$ is a subset of $\RRposi$, then the lower closure $\downarrow U$ of $U$ is defined as:
+$$x \in \downarrow U \textnormal{ iff } \exists y \in U, x \leq y$$
+\end{definition}
+We immediately get the following lemma, which will be used a lot in our proofs:
+\begin{lemma}
+\label{magical_lemma}
+
+\begin{enumerate}
+\item If $U$ is a subset of $\RRposi$, then $U \subset \downarrow U$.
+\item $\downarrow U = \emptyset$ iff $U = \emptyset$ 
+\end{enumerate}
+\end{lemma}
+
+\begin{theorem} The following order is a partial order over $\mathcal{F}'$:
+$$f \leq_{\mathcal{F}'} g \textnormal{ iff } \forall \sigma \in \Sigma, \downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$$
+\end{theorem}
+\begin{proof} Reflexivity, antisymmetry and transitivity are respectively obtained from the reflexivity, antisymmetry and transitivity of $\subset$ as an order relation over $\RRposi$.
+\end{proof}
+
+\begin{theorem}
+$(\mathcal{F}',\leq_{\mathcal{F}'})$ is a complete partial order.
+\end{theorem}
+\begin{proof}
+\begin{itemize}
+\item One easily sees that $\bot : \sigma \rightarrow \emptyset$ is the minimal element
+\item Let $S = \{f_1, f_2, \dots \}$ be a chain of $\mathcal{F}'$. Therefore, we have $f_1 \leq_{\mathcal{F}'} f_2 \leq_{\mathcal{F}'} \dots$.\newline
+We shall consider $f \in \mathcal{F}'$ defined by: $f : \sigma \rightarrow \cup_{n \in \NN^*} f_n(\sigma)$. We will prove that $f$ is the least upper bound of $S$.
+\begin{itemize}
+\item Let $n \in \NN^*$ and $\sigma \in \Sigma$. We have to prove that $\downarrow(f_n(\sigma)) \subset \downarrow (f(\sigma))$. If $f_n(\sigma) = \emptyset$, then we immediately get the result.\newline 
+Otherwise, let $x \in \downarrow(f_n(\sigma))$. Therefore, there exists $y \in f_n(\sigma)$ such that $x \leq y$. We immediately deduce that $y \in f_n(\sigma) \in \cup_{n \in \NN^*} f_n(\sigma) = f(\sigma)$, and as $x \leq y$, then $x \in \downarrow (f(\sigma))$. As this holds for all $n \in \NN^*$ and for all $\sigma \in \Sigma$, we get that:
+$$\forall n \in \NN^*, \forall \sigma \in \Sigma, \downarrow(f_n(\sigma)) \subset \downarrow(f(\sigma))$$
+And therefore, $\forall n \in \NN^*$, $f_n \leq_{\mathcal{F}'} f$. Thus, $f$ is an upper bound for $S$.
+\item Let $g$ be another upper bound of $S$. Therefore, we have:
+$$\forall n \in \NN^*, \forall \sigma \in \Sigma, \downarrow(f_n(\sigma)) \subset \downarrow(g(\sigma))$$
+Let $\sigma \in \Sigma$. We want to prove that $\downarrow (f(\sigma)) \subset \downarrow(g(\sigma))$. If $f(\sigma) = \emptyset$, the result is immediate.\newline
+Otherwise, let $x \in \downarrow(f(\sigma))$. Therefore, there exists $y \in f(\sigma)$ such that $x \leq y$. As $y \in f(\sigma)$, there exists $n \in \NN^*$ such that $y \in f_n(\sigma)$. With the Lemma \ref{magical_lemma}, we get that $y \in \downarrow(f_n(\sigma))$, and then, with the previous hypothesis, $y \in \downarrow(g(\sigma))$. Hence, there exists $z \in g(\sigma)$ with $y \leq z$. Thus, $x \leq z$, and therefore, $x \in \downarrow(g(\sigma))$.\newline
+Therefore, $\forall \sigma \in \Sigma$, $\downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$, and thus, $f \leq_{\mathcal{F}'} g$. Hence, $f$ is the least upper bound of $S$.
+\end{itemize} 
+\end{itemize}
+\end{proof}
+
+We proved the first point: $\mathcal{F}'$ is a complete partial order.\newline
+Now, we want to prove the following theorem.
+
+\begin{theorem}
+For all pGCL programs $P$, $ev[P] : \mathcal{F}' \rightarrow \mathcal{F}'$ is a monotone function
+\end{theorem}
+\begin{proof}
+We will prove it by induction, using the rules in Table \ref{table:rules_ev}.
+\begin{itemize}
+\item Obviously, when $P = \texttt{skip}$, if $f \leq_{\mathcal{F}'} g$, then $ev[skip](f) = f \leq_{\mathcal{F}'} g = ev[skip](g)$\bigskip
+
+\item $P = \{ x := A\}$, if $f \leq_{\mathcal{F}'} g$, then we get that $\forall \sigma \in \Sigma$, $\downarrow(f(\sigma)) \subset \downarrow (g(\sigma))$. Particularly, for all $\sigma' \in \Sigma$ such that there exists $\sigma \in \Sigma$ where $\sigma' = \sigma[x/A]$, we get $\downarrow(f(\sigma')) \subset \downarrow(g(\sigma'))$. Therefore, $ev[x := A](f) = \lambda \sigma. f(\sigma[x/A]) \leq_{\mathcal{F}'} \lambda \sigma. g(\sigma[x/A]) = ev[x := A](g)$
+\bigskip
+
+\item When $P = P_1;P_2$, assume that $ev[P_1]$ and $ev[P_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we get that $ev[P_2](f) \leq_{\mathcal{F}'} ev[P_2](g)$, and then, $ev[P_1](ev[P_2](f)) \leq_{\mathcal{F}'} ev[P_1](ev[P_2](g))$. Finally, we proved that $ev[P_1 ; P_2](f) \leq_{\mathcal{F}'} ev[P_1 ; P_2](g)$
+\bigskip
+
+\item When $P = P_1 \square P_2$, assume that $ev[P_1]$ and $ev[P_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[P](f) = \lambda\sigma. ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma) \leq_{\mathcal{F}'} \lambda\sigma. ev[P_1](g)(\sigma) \cup ev[P_2](g)(\sigma) = ev[P](g)$. \newline
+To that extent, we have to prove that, 
+$$\forall \sigma \in \Sigma, \downarrow(ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma)) \subset \downarrow(ev[P_1](g)(\sigma) \cup ev[P_2](g)(\sigma))$$
+Let $\sigma \in \Sigma$. If $ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma) = \emptyset$, then there is nothing to prove.\bigskip
+
+Otherwise, let $x \in \downarrow(ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma))$. Then, there exists $y \in ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma)$ such that $x \leq y$. We assume that $y \in ev[P_1](f)(\sigma)$. Then, with the Lemma \ref{magical_lemma}, $y \in \downarrow (ev[P_1](f)(\sigma)) \subset \downarrow (ev[P_1](g)(\sigma))$. Therefore, there exists $z \in ev[P_1](g)(\sigma)$ such that $y \leq z$. One the one hand, we can notice that $z \in ev[P_1](g)(\sigma) \subset ev[P_1](g)(\sigma) \cup ev[P_2](g)(\sigma)$, and on the other hand, that $x \leq y \leq z$. Therefore, $x \in \downarrow(ev[P_1](g)(\sigma) \cup ev[P_2](g)(\sigma))$. The proof is symmetrical if $y \in ev[P_2](f)(\sigma)$. Therefore, we got our result.\bigskip
+
+\item When $P = P_1 [p] P_2$, assume that $ev[P_1]$ and $ev[P_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[P](f) = \lambda \sigma. \{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\} \leq_{\mathcal{F}'} \lambda \sigma. \{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma)\} = ev[P](g)$ .\newline
+To that extent, we have to prove that:
+\begin{align*}
+\forall \sigma \in \Sigma, & \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\}) \\
+\subset & \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma)\})
+\end{align*}
+Let $\sigma \in \Sigma$. As usual, if  $\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\} = \emptyset$, there is nothing to prove.\bigskip
+
+Otherwise, let $x \in \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\})$. Then, there exists $y \in \{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\}$ such that $x \leq y$. We can tell that there exists $t_1 \in ev[P_1](f)(\sigma)$ and $t_2 \in ev[P_1](2)(\sigma)$ such that $y = t_1p+t_2(1-p)$.\newline
+With the Lemma \ref{magical_lemma}, $t_1 \in ev[P_1](f)(\sigma) \subset \downarrow ( ev[P_1](f)(\sigma)) \subset \downarrow (ev[P_1](g)(\sigma))$, and therefore, there exists $z_1 \in ev[P_1](g)(\sigma)$ such that $t_1 \leq z_1$. Symmetrically, there exists $z_2 \in ev[P_2](g)(\sigma)$ such that $t_2 \leq z_2$.\bigskip
+
+Now, we have $x \leq y = t_1p+t_2(1-p) \leq z_1p+z_2(1-p)$, with $z_1 \in ev[P_2](g)(\sigma)$ and $z_2 \in ev[P_2](g)(\sigma)$.\newline
+This proves that $x \in \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma)\})$.\bigskip
+
+\item When $P = \texttt{ if } b \texttt{ then } P_1 \texttt{ else } P_2$, assume that $ev[P_1]$ and $ev[P_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[P](f) = \lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma) \} \leq_{\mathcal{F}'} \lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma) \} = ev[P](g)$. \newline
+To that extent, we have to prove that:
+\begin{align*}
+\forall \sigma \in \Sigma, & \downarrow \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\, \\
+& t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma) \} \\
+\subset & \downarrow  \{ [\![b : true ]\!](\sigma) \cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\, \\
+& t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma) \} \\
+\end{align*}
+Let $\sigma \in \Sigma$. If $\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma) \} = \emptyset$, then the result is immediate.\bigskip
+
+Otherwise, let $x \in \downarrow \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma) \} $.\newline
+Then, there exists $t_1 \in ev[P_1](f)(\sigma)$ and $t_2 \in ev[P_2](f)(\sigma)$ such that $x \leq  [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 $. Let $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2
+$\bigskip
+
+Using the Lemma \ref{magical_lemma}, we get that $t_1 \in ev[P_1](f)(\sigma) \subset \downarrow(ev[P_1](f)(\sigma)) \subset \downarrow(ev[P_1](g)(\sigma))$. Therefore, there exists $z_1 \in ev[P_1](g)(\sigma)$ such that $t_1 \leq z_1$. And symmetrically, there exists $z_2 \in ev[P_2](g)(\sigma)$ such that $t_2 \leq z_2$.\newline
+
+Let $z = [\![b : true ]\!](\sigma) \cdot z_1 + [\![b : false ]\!](\sigma) \cdot z_2$.\newline
+If $b$ holds in $\sigma$, then $y = t_1$ and $z = z_1$. We had $x \leq y$, and $t_1 \leq z_1$. Thus, $x \leq z$. Symmetrically, if $b$ does not hold in $\sigma$, then, $y = t_2$ and $z = z_2$ and we symmetrically prove that $x \leq z$. And we easily see that $z \in \{ [\![b : true ]\!](\sigma) \cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\,
+t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma) \}$. This concludes this point of the proof.\bigskip
+
+\item When $P = \texttt{ while }(b)\texttt{ do }\{P_1\}$, assume that $ev[P_1]$ is monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[P](f) =$ lfp $(\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](X)(\sigma), t_2 \in f(\sigma) \}) \leq_{\mathcal{F}'}$ lfp $(\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](X)(\sigma), t_2 \in g(\sigma) \}) =ev[P](g)$. \bigskip
+
+We proved previously that $\mathcal{F}'$ was a complete partial order. Therefore, Kleene's fixed-point theorem can be applied here, and we can compute the two least fixed-point previously mentioned.\bigskip
+
+Let $F_f(X)$ denote $\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](X)(\sigma), t_2 \in f(\sigma) \}$, and symmetrically, let $F_g(X)$ denote $\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](X)(\sigma), t_2 \in g(\sigma) \}$.\bigskip
+
+We seek to prove that lfp $F_f \leq_{\mathcal{F}'} $ lfp $ F_g$. Applying Kleene's Theorem (recall that $\bot : \sigma \rightarrow \emptyset$), we get that 
+\begin{align*}
+\textnormal{lfp } F_f = \Sup_{n \in \NN^*}(F_f^n(\bot)) \\
+\textnormal{lfp } F_g = \Sup_{n \in \NN^*}(F_g^n(\bot))
+\end{align*}
+Therefore, we have to prove that:
+\begin{align*}
+\forall \sigma \in \Sigma, \downarrow ((\Sup_{n \in \NN^*}(F_f^n(\bot)))(\sigma)) \subset  \downarrow ((\Sup_{n \in \NN^*}(F_g^n(\bot)))(\sigma)) 
+\end{align*}
+One easily verifies that, to prove the previous proposition, it is sufficient to prove that:
+\begin{align*}
+\forall n \in \NN, F_f^n(\bot) \leq_{\mathcal{F}'} F_g^n(\bot)
+\end{align*}
+Or, equivalently:
+\begin{align*}
+\forall n \in \NN, \forall \sigma \in \Sigma, \downarrow(F_f^n(\bot)(\sigma)) \subset \downarrow(F_g^n(\bot)(\sigma))
+\end{align*}
+This is proven by induction:
+\begin{itemize}
+\item For $n = 0$, $F_f^0 = F_g^0 = Id_{\mathcal{F}'}$, and therefore, the result is immediate.
+\item If, for one $n \in \NN$, we get that $\forall \sigma \in \Sigma, \downarrow(F_f^n(\bot)(\sigma)) \subset \downarrow(F_g^n(\bot)(\sigma))$, then, let $\sigma \in \Sigma$ and let $x \in \downarrow(F_f^{n+1}(\bot)(\sigma))$. We shall prove that $x \in \downarrow(F_g^{n+1}(\bot)(\sigma))$.\bigskip
+
+We know that there exists $y \in F_f^{n+1}(\bot)(\sigma)$ such that $x \leq y$. And as $y \in F_f^{n+1}(\bot)(\sigma) = F_f(F_f^n(\bot))(\sigma) = \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](F_f^n(\bot))(\sigma), t_2 \in f(\sigma) \}$. \bigskip
+
+Hence, there exists $t_1 \in ev[P_1](F_f^n(\bot))(\sigma)$ and $t_2 \in f(\sigma)$ such that $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 $.\newline
+With the Lemma \ref{magical_lemma} we get that $t_1 \in ev[P_1](F_f^n(\bot))(\sigma) \subset \downarrow(ev[P_1](F_f^n(\bot))(\sigma))$.\newline
+With the induction hypothesis, that $F_f^n(\bot) \leq_{\mathcal{F}'} F_g^n(\bot)$, and with the monotonicity of $ev[P_1]$, we get that $ev[P_1](F_f^n(\bot)) \leq_{\mathcal{F}'} ev[P_1](F_g^n(\bot))$, and particularly, that $\downarrow(ev[P_1](F_f^n(\bot))(\sigma)) \subset \downarrow(ev[P_1](F_g^n(\bot))(\sigma))$. Hence, $t_1 \in \downarrow(ev[P_1](F_g^n(\bot))(\sigma))$.\newline
+Symetrically, recall that $f \leq_{\mathcal{F}'} g$, and therefore, $\downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$. And as $t_2 \in f(\sigma)$, then $t_2 \in \downarrow(f(\sigma))$, and hence, $t_2 \in \downarrow(g(\sigma))$.\bigskip
+
+Hence, e get that there exists $z_1 \in ev[P_1](F_g^n(\bot))(\sigma)$ and $z_2 \in g(\sigma)$ such that $t_1 \leq z_1$ and $t_2 \leq z_2$.\newline
+Therefore, $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \leq [\![b : true ]\!](\sigma)\cdot z_1 + [\![b : false ]\!](\sigma)\cdot z_2 \in F_g(F_g^n(\bot))(\sigma) = F_g^{n+1}(\sigma)$. Therefore, $y \in \downarrow(F_g^{n+1}(\sigma))$. And as $x \leq y$, then $x \in \downarrow(F_g^{n+1}(\sigma))$.\bigskip
+
+This concludes the proof.
+\end{itemize}
+\end{itemize} 
+
+%lfp ($\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$\\$t_1 \in ev[S](X)(\sigma), t_2 \in f(\sigma) \}$))
+
+\end{proof}
 
 \end{document}
