@@ -9,13 +9,15 @@
 \usepackage{cite}
 \usepackage{color}
 \usepackage{makecell}
+\usepackage{dblfloatfix}
 \usepackage{caption}
+\usepackage{bm}
 %\usepackage{amsthm}
 %openin
 \title{}
 \author{}
 
-\pagestyle{plain}
+%\pagestyle{plain}
 % \newtheorem{definition}{Definition}
 % \newtheorem{proposition}{Proposition}
 % \newtheorem{corollary}{Corollary}
@@ -78,59 +80,52 @@
 \end{titlepage}
 
  \begin{abstract}
-In contrast to ordinary programs, probabilistic programs compute a probability distribution of output states for each given input state. One benefit of adding randomness into programs is that computationally hard problems, such as matrix multiplication or leader election protocols, can be solved (on average) more efficiently. A frequently used design concept to model unknown or overly complex probability distributions is nondeterministic choice. However, having probabilistic and nondeterministic choice within the same program (or even within loops) leads to subtle semantical intricacies. The goal of this report is to capture the semantics of both concepts uniformly using possibility theory. This would allow to simplify existing weakest-precondition style calculi for reasoning about probabilistic and nondeterministic programs.
+In contrast to ordinary programs, probabilistic programs do not compute simply one output state, but a probability distribution of output states, for each given input state. One benefit of adding randomness into programs is that computationally hard problems, such as matrix multiplication or leader election protocols, can be solved (on average) more efficiently. A frequently used design concept to model unknown or overly complex probability distributions is nondeterministic choice. However, having probabilistic and nondeterministic choice within the same program (or even within loops) leads to subtle semantical intricacies. The goal of this report is to capture the semantics of both concepts uniformly using possibility theory. This would allow to simplify existing weakest-precondition style calculi for reasoning about probabilistic and nondeterministic programs.
   \begin{description}
-  \item[Keywords:]Fuzzy imperative languages ; Fuzzy relations ; Possibility theory ; Weakest-precondition
+  \item[Keywords:]Weakest-precondition ; Possibility theory ; Anticipation of values ; Fuzzy random variables
   \end{description}
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
-Probabilistic programs are programs, in which probabilistic choices are involved. For instance, the simple program $\{ x := 2 \} [\frac{1}{3}] \{ x := 5 \}$ simulates flipping a biased coin (with one outcome having a probability of $\frac{1}{3}$, and the other one $\frac{2}{3}$). One easily notices that, contrary to classical deterministic programs, executing such a program contaning probabilistic choices with the same input will not always result in the same output. In this whole report, programs containing probabilistic choices will be called \emph{probabilistic programs}. Though they seem more complex than deterministic programs, probabilistic programs are useful in many ways. For example, it is simpler to solve some problems with probabilistic programs than with deterministic ones, as we can build probabilistic programs which have a better average complexity than deterministic programs (sometimes at the cost of a small probability of error). Classical examples of such programs are the quicksort algorithm \cite{Hoare61}, Freivalds' matrix multiplication \cite{Freivalds77}, and certain primality tests, such as the Miller-Rabin test \cite{Rabin77} and the Solovay-Strassen test \cite{SolovayStrassen77} (for positive numbers), and the Berlekamp test (for polynomials) \cite{Berlekamp67}. There also exists probabilistic algorithms to solve the leader election problem (see \cite{Ramanathan04}).\newline 
-Apart from probabilistic choice, there exists a different kind of choice, frequently used, but also making programs nondeterministic, called nondeterministic choice. One example is the following program: $\{ x := 2 \} \square \{ x := 5 \}$. In this example, the program will set $x$ nondeterministically to $2$, or to $5$, but we cannot assign a probability to any of these choices. More precisely, it makes no sense to assign them a probability. In this whole report, programs containing such choices will be called \emph{nondeterministic programs}. Such programs share with probabilistic programs their ability to return different outputs for one given input. The nondeterministic choice was first introduced by Dijkstra in the GCL language \cite{Dijkstra76} (which did not include the probabilistic choice), and is used, for instance, in the model-checker Spin, to model the unpredictable behavior of a program where several choices are possible. It is also used in programs where the outcomes of a choice are known, but the mecanism making the choices is either unknown, or uses overly complex probability distributions. \todo{Find a source} This kind of choice is also a common concept in concurrency theory.\bigskip
+Probabilistic programs are programs in which probabilistic choices are involved. For instance, the simple program $\{ x := 2 \} [\frac{1}{3}] \{ x := 5 \}$ simulates flipping a biased coin (with the first outcome having a probability of $\frac{1}{3}$, and the other one $\frac{2}{3}$). One easily notices that, contrary to classical deterministic programs, executing such a program on a fixed input will not always result in the same output. In this report, programs containing probabilistic choices are called \emph{probabilistic programs}. Though they seem more complex than deterministic programs, probabilistic programs are useful in many ways. For example, it is simpler to solve some problems with probabilistic programs than with deterministic ones. For instance, we can build probabilistic programs which have a better average complexity than deterministic programs (sometimes at the cost of a small probability of error). Classical examples of such programs are the quicksort algorithm \cite{Hoare61}, Freivalds' matrix multiplication \cite{Freivalds77}, and certain primality tests, such as the Miller-Rabin test \cite{Rabin77} and the Solovay-Strassen test \cite{SolovayStrassen77} (for positive numbers), and the Berlekamp test (for polynomials) \cite{Berlekamp67}. There also exist probabilistic algorithms to solve the leader election problem \cite{Ramanathan04}.\newline 
+Apart from probabilistic choice, there exists a different kind of choice, frequently used, which also makes programs nondeterministic, called nondeterministic choice. One example is the following program: $\{ x := 2 \} \square \{ x := 5 \}$. In this example, the program will set $x$ nondeterministically to $2$, or to $5$, but we cannot assign a probability to any of these choices. More precisely, it makes no sense to assign a probability to them. In this report, programs containing such choices are called \emph{nondeterministic programs}. Such programs share with probabilistic programs their ability to return different outputs for one given input. The nondeterministic choice was first introduced by Dijkstra in the GCL language \cite{Dijkstra76} (which did not include the probabilistic choice), and is used, for instance, in the model-checker Spin \cite{Holzmann97}, to model the unpredictable behavior of a program where several choices are possible, for instance when modeling concurrency problems. It is also used in programs where the outcomes of a choice are known, but the mecanism making the choices is either unknown, or uses overly complex probability distributions, or when there are several possible mecanisms. \cite{McIver05} This instruction, however, is not meant to be executed in a program, it is only used for modeling purposes.\bigskip
 
-However, one major problem arises when combining the probabilistic and nondeterministic choices in the same program. Programs containing both types are called \emph{fully probabilistic programs}, whereas programs containing none of them are \emph{deterministic programs}. In this report, we will use the following fully probabilistic program as a running example:
+However, one major problem arises when combining the probabilistic and nondeterministic choices in the same program: defining proper semantics for programs containing both types of choices. Programs containing both types are called \emph{probabilistic nondeterministic programs}, whereas programs containing none of them are \emph{deterministic programs}. In this report, we will use the following probabilistic nondeterministic program as a running example:
 \begin{align*}
- P_0\textnormal{: } \{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \} \textnormal{(with } p \in ]0,1[\textnormal{)}
+ P_0\textnormal{: } \{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \} \textnormal{              (with } p \in ]0,1[\textnormal{)}
 \end{align*}
 
-This program intuitively sets the program variable $x$ to $7$ with a probability $1-p$, and with a probability $p$, sets nondeterministically $x$ either to $2$ or to $5$. How can we semantically describe this program ?\bigskip
+This program intuitively sets the program variable $x$ to $7$ with probability $1-p$, and with probability $p$, sets nondeterministically $x$ either to $2$ or to $5$. How can we semantically describe this program ?\bigskip
 
 
 
-A frequently used semantics, which turned out to be well-suited to program verification, is Dijkstra's predicate transformer semantics \cite{Dijkstra76}, which consists in viewing nondeterministic programs (without probabilistic choice) as predicate transformers. More precisely, if $P$ is a program and $\varphi$ a predicate over the set of states (i.e. an object modeling a property, that each state will or not satisfy), then the predicate transformer semantics describes $P$ as an object $wp[P]$, transforming the predicate $\varphi$ (called \emph{postcondition} in this context) into another predicate called the \emph{weakest precondition of $\varphi$ for the program $P$}, denoted by $wp[P](\varphi)$. As the name explicitely says, this new predicate is the weakest (in the sense of "least restrictive", or "satisfied by the most states") predicate $\psi$ verifying the following property: if $P$ is executed in a state satisfying $\psi$, then $P$ is guaranteed to terminate in a state satisfying $\varphi$.\newline
-
-%When introducing the GCL language \cite{Dijkstra76} (whose semantics allow it to generate nondeterministic programs, but not probabilistic programs), Dijkstra also introduced \emph{predicate transformer semantics}, and particularly the calculus of weakest precondition. This concept relies on Hoare triples: A \emph{Hoare triple} is a triple of the form $\{\psi\}P\{\varphi\}$, where $P$ is a program, and where $\psi$ and $\varphi$ are predicates respectively called \emph{precondition} and \emph{postcondition}. A Hoare triple is said to be \emph{valid} if and only if, each time that an initial state satisfies $\psi$, the final state obtained after executing $P$ satisfies $\varphi$. Thus, Dijkstra introduced the weakest preconditions: if $P$ is a program and $\varphi$ is a postcondition, then $wp[P](\varphi)$ is the weakest (in the sense of "satisfied by the most states") precondition $\psi$ making the Hoare triple $\{\psi\}P\{\varphi\}$ valid. The predicate transformer computation is a set of rules which, knowing a program $P$ and a postcondition $\psi$, allow the computation of the associated weakest precondition $wp[P](\psi)$. One can therefore see $P$ as a predicate transformer, transforming the predicate $\varphi$ into the predicate $wp[P](\varphi)$.\newline
-
+A frequently used semantics, which is well-suited to program verification, is Dijkstra's predicate transformer semantics \cite{Dijkstra76} (in the case of nondeterministic programs without probabilistic choices). More precisely, if $S$ is a program and $\varphi$ a predicate over the set of states (i.e. an object modeling a property over states), then the predicate transformer semantics describes $S$ as an object $wp[S]$, transforming the predicate $\varphi$ (called \emph{postcondition} in this context) into another predicate called the \emph{weakest precondition of $\varphi$ for the program $S$}, denoted by $wp[S](\varphi)$. As the name indicates, this new predicate is the weakest (in the sense of "least restrictive", or "satisfied by the most states") predicate $\psi$ satisfying the following property: if $S$ is executed in a state satisfying $\psi$, then $S$ is guaranteed to terminate in a state satisfying $\varphi$.\newline
 
 
 For instance, consider the following sequential program:
 \begin{align*}
  P_1\textnormal{: } x := -y ; x := x+1
 \end{align*}
-If we denote by $[x \geq 5]$ the predicate satisfied by all states where $x$ is greater or equal to $5$, then we get that $wp[P_1]([x \geq 5]) = wp[x := -y]([x \geq 4]) = [y \leq -4]$. (The formal method to get this result is presented in \cite{Dijkstra76} and will be reminded in Section \ref{sec:state})\bigskip
+If we denote by $[x \geq 5]$ the predicate satisfied by all states where $x$ is greater or equal to $5$, then we get that $wp[P_1]([x \geq 5]) = wp[x := -y]([x \geq 4]) = [y \leq -4]$. The formal method to get this result is presented in \cite{Dijkstra76} and will be recapped in Section \ref{sec:state}, and the calculation is detailed in Appendix \ref{subsec:wp_p0}.\bigskip
 
-Dijkstra's predicate transformer semantics was extended by McIver and Morgan \cite{McIver05} to fully probabilistic programs by changing the semantics, such that the weakest precondition $wp[P](\varphi)$ assigns to each state $\sigma$ the probability that the execution of the program $P$ in $\sigma$ terminates in a state satisfying $\varphi$, instead of assigning only $0$ or $1$ values meaning that the execution of $P$ will certainly or certainly not terminate in a state satisfying the postcondition. Note that applying the semantics of McIver and Morgan to nondeterministic programs, without any probabilistic choice, the results are the same as in Dijkstra's semantics.\newline
-By applying the semantics of McIver and Morgan to the program $P_0$ (note that, the way the program is written, the final state should not depend on the initial state in this example), we get that the probability, for each initial state, that the the final state satisfies $[x = 7]$ is $1-p$, which is intuitively expected (formally, this means that $wp[P_0]([x = 7])$ assigns to each state the constant $1-p$). Now, consider the subprogram $P_2$ of $P_0$:
+Dijkstra's predicate transformer semantics was extended by McIver and Morgan \cite{McIver05} to probabilistic nondeterministic programs by changing the semantics, such that the weakest precondition $wp[S](\varphi)$ assigns to each state $\sigma$ the probability that the execution of the program $S$ in $\sigma$ terminates in a state satisfying $\varphi$, instead of assigning only $0$ or $1$ values meaning that the execution of $S$ will certainly or certainly not terminate in a state satisfying the postcondition. Note that, when applying the semantics of McIver and Morgan to nondeterministic programs, without any probabilistic choice, the results are the same as in Dijkstra's semantics.\newline
+By applying the semantics of McIver and Morgan to the program $P_0$ (note that, the way the program is written, the final state should not depend on the initial state in this example), we get that the probability for each initial state that the the final state satisfies $[x = 7]$ is $1-p$, which is intuitively expected (formally, this means that $wp[P_0]([x = 7])$ assigns to each state the constant $1-p$, which can be written as $wp[P_0]([x = 7]) = \lambda\sigma. 1-p$). Now, consider the subprogram $P_2$ of $P_0$:
 \begin{align*}
  P_2\textnormal{: } \{x := 2\} \square \{x := 5\} 
 \end{align*}
-%The semantics of McIver and Morgan also give the following result: the probability, for each initial state, that the final state (after executing $P_0$) satisfies $[x = 2]$ is $0$ (and symmetrically for $[x = 5]$); however, the probability, for each state, that the final state (after executing $P_0$) satisfies $[x = 2 \textnormal{ OR } x = 5]$ is $p$. Theses results are not unexpected, as the execution of $P_0$ has a probability $p$ of executing $P_2$, in which we know that $x$ is set  either to $2$ or to $5$.\newline 
-Recall that, the semantics of McIver and Morgan, $wp[P](\varphi)$ assigns to each state the probability that the execution of $P$ in this state terminates in a state satisfying $\varphi$ (it is therefore a function from the set of states to $[0,1]$).
-As it is not possible to assign probabilities to the nondeterministic choices, conventions must be defined in order to compute weakest precondition when the program contains nondeterministic choices:
+Recall that the semantics of McIver and Morgan, $wp[S](\varphi)$ assigns to each state $\sigma$ the probability that the execution of $S$ in $\sigma$ terminates in a state satisfying $\varphi$. It is therefore a function from the set of states $\Sigma$ to $[0,1]$.
+As it is not possible to assign probabilities to the outcomes of a nondeterministic choice, conventions must be defined in order to compute weakest precondition when the program contains nondeterministic choices:
 \begin{enumerate}
 \item One possible choice is to consider that the outcome which is realized is the least desired outcome (for the given postcondition). In this case, the nondeterministic choice is called \emph{demonic choice} \cite{McIver05}. In this example, when computing $wp[P_2]([x = 2])$, the least desired outcome is $x := 5$. It is therefore considered as the chosen outcome, and after its execution, $[x = 2]$ cannot be satisfied. Hence, $wp[P_2]([x = 2])$ assigns to each state the constant $0$, and thus, $wp[P_0]([x = 2])$ also assigns to each state the constant $0$. We get the same result with $[x = 5]$. However, when computing $wp[P_2]([x = 2 \textnormal{ OR } x = 5])$, we get the constant function $1$ (thus, $wp[P_0]([x = 2 \textnormal{ OR } x = 5])$ is the constant function $p$), because in both possible outcomes of the choice, the postcondition will be satisfied. But this result is counterintuitive, as it violates the modularity law of probabilities (detailed below).
-\item An alternative possibility is the \emph{angelic choice} (named in \cite{McIver05}), which is intuitively the opposite of the demonic choice. In this case, the outcome which is realized is the most desired outcome. With this choice, we get that $wp[P_0]([x = 2])$ is the constant function $p$, and symetrically for $wp[P_0]([x = 5])$. But $wp[P_0]([x = 2 \textnormal{ OR } x = 5])$ is also the constant function $p$. These results also violates the modularity law of probabilities.
+\item An alternative possibility is \emph{angelic choice} (named in \cite{McIver05}), which is intuitively the opposite of the demonic choice. In this case, the outcome which is realized is the most desired outcome. With this choice, we get that $wp[P_0]([x = 2])$ is the constant function $p$, and symetrically for $wp[P_0]([x = 5])$. But $wp[P_0]([x = 2 \textnormal{ OR } x = 5])$ is also the constant function $p$. This result also violates the modularity law of probabilities.
 \end{enumerate}
 In both cases, counterintuitive results are obtained.
-\notsure{Moreover, in the demonic choice case, in order to realise that there exists executions where $[x=2]$ can be achieved, we have to compute the weakest precondition of another postcondition (namely, $[x = 2 \textnormal{ OR } x = 5]$), because $wp[P_0]([x = 2])$ is the constant function $0$. The latter result is therefore missing information.} Therefore, in order to obtain more intuitive, or more understandable results, we can either try to define a new convention for the nondeterministic choice, or define new semantics not based on probabilities.\bigskip
+Moreover, in the demonic choice case, in order to realise that there exist executions where $[x=2]$ can be achieved, we have to compute the weakest precondition of another postcondition (namely, $[x = 2 \textnormal{ OR } x = 5]$), because $wp[P_0]([x = 2])$ is the constant function $0$. The latter result is therefore missing information. Therefore, in order to obtain more intuitive, or more understandable results, we can either try to define a new convention for the nondeterministic choice, or define new semantics not based on probabilities.\bigskip
 
-%In \cite{McIver05}, the authors chose a convention such that, in this case, the probability of getting to a state satisfying $[x = 2]$ is $0$, as there is no guarantee that the corresponding instruction is executed and no way to assign a probability.\newline
-%However, this result seems to lack information, as there is a possibility that the final state satisfies $[x = 2]$, but the corresponding probability is $0$, and in order to know that this program can achieve a state where $[x = 2]$, we have to compute the weakest precondition of another postcondition as $[x = 2]$ (in this case, $[x := 2 \textnormal{ OR } x = 5]$).\newline
-%Moreover, the convention chosen in \cite{McIver05} (and in \cite{WuChen11}) is not universal, as other authors \cite{WuChen08,WuChen12} chose conventions with which we get other results (notably the probability of achieving a state where $[x = 2]$ holds becomes $p$ (and symmetrically for $[x = 5]$), and the probability of achieving a state where $[x = 2 \textnormal{ OR } x = 5]$ holds remains $p$ ). \bigskip
 
-Some authors \cite{WuChen08,WuChen11,WuChen12} tried a different approach to weakest precondition calculus, based on possibility theory rather on probabilities, in order to define different semantics and possibly give a better comprehension of how nondeterministic programs behave.
-Possibility theory is an alternative approach to probabilities to model uncertainty (detailed in \cite{Agarwal15,Shapiro09}). It is well-known that $Pr$ is a probability measure over $\Omega$ for the $\sigma$-algebra $\mathcal{A}$ if it is a mapping from $\mathcal{A}$ to $[0,1]$ satisfying the following axioms:
+Some authors \cite{WuChen08,WuChen11,WuChen12} tried a different approach to the weakest precondition calculus, based on possibility theory rather than on probabilities, in order to define different semantics and possibly give a better comprehension of how nondeterministic programs behave.
+Possibility theory is an alternative approach to probabilities to model uncertainty (detailed in \cite{Agarwal15,Shapiro09}). Recall that $Pr$ is a probability measure over $\Omega$ for the $\sigma$-algebra $\mathcal{A}$ if it is a mapping from $\mathcal{A}$ to $[0,1]$ satisfying the following axioms:
 \begin{enumerate}
 \item $Pr(\emptyset) = 0$
 \item $Pr(\Omega) = 1$
@@ -142,423 +137,93 @@ On the contrary, $\Pi$ is a possibility measure over $\Omega$ for the $\sigma$-a
 \item $\Pi(\Omega) = 1$
 \item $\forall U,V \in \mathcal{A}$, $\Pi(U \cup V) = \Max( \Pi(U), \Pi(V))$ (max-modularity law)
 \end{enumerate}
-This type of measure, however, does not give as much information as probabilities. Indeed, when $Pr(U) = 1$, we know that an event of $U$ happens almost surely, and when $Pr(U) = 0$, we know that any event of $U$ almost never happen. However, when $\Pi(U) = 0$, we know that all events of $U$ are impossible (thus cannot happen), but when $\Pi(U) = 1$, it just means that at least one event of $U$ is totally possible, but we cannot tell that it will almost surely happen. As the name says, a possibility measure only indicates how possible an event is, but not how often it is realized. This behavior bears a strong resemblance to the nondeterministic choice, whose outcomes are known to be possible, but do not have any probability assigned. \bigskip
+This type of measure, however, does not give as much information as probabilities. Indeed, when $Pr(U) = 1$, we know that an event of $U$ happens almost surely, and when $Pr(U) = 0$, we know that any event of $U$ almost never happens. However, when $\Pi(U) = 0$, we know that all events of $U$ are impossible (thus cannot happen), but when $\Pi(U) = 1$, it just means that at least one event of $U$ is possible, but we cannot tell that it will almost surely happen. As the name indicates, a possibility measure only indicates how possible an event is, but not how likely it is to be realized. This behavior bears a strong resemblance to the nondeterministic choice, whose outcomes are known to be possible, but do not have any probability assigned. \bigskip
 
-Using possibilities instead of probabilities first seems not to be an interesting choice, since possibilities normally do not bear as much information as probabilities, as we said earlier. But in fact, possibility theory has already been studied \cite{WuChen08,WuChen11,WuChen12} in order to define predicate transformer semantics for fuzzy imperative languages (defined in \cite{Bueno93,Bueno97}, they are languages with more instructions based on possibilities, and are at least as expressive as GCL), and the authors obtained interesting semantics in which each possible outcome is taken in account (even for GCL programs). However, these languages do not include the probabilistic choice.\bigskip
+Using possibilities instead of probabilities first seems not to be an interesting choice, since possibilities normally do not bear as much information as probabilities, as we said earlier. But in fact, possibility theory has already been studied \cite{WuChen08,WuChen11,WuChen12} in order to define predicate transformer semantics for fuzzy imperative languages (defined in \cite{Bueno93,Bueno97}, they are languages with more instructions based on possibilities, and are at least as expressive as GCL), and the authors obtained interesting semantics in which each possible outcome is taken into account (even for GCL programs). However, these languages do not include the probabilistic choice.\bigskip
 
-In this report, our goal is to give our own semantics of probabilistic nondeterministic programs, and more precisely an expected value semantics (which can be derived from predicate transformer semantics), where we consider expected values of fuzzy random variables (first defined in \cite{PuriRal86}, and then simplified in \cite{Shapiro09}). It is a way to get a possibility-based semantics for pGCL programs, applying the idea of \cite{WuChen08,WuChen11,WuChen12} of using possibility theory to the pGCL language presented in \cite{McIver05}.\bigskip
+In this report, our goal is to give our own semantics of probabilistic nondeterministic programs, and more precisely a semantics describing the program by anticipating the values of functions after its execution (this kind of semantics can be derived from predicate transformer semantics), where we consider set-valued functions. We show that it is related to the computation of expected values of fuzzy random variables (first defined in \cite{PuriRal86}, and then simplified in \cite{Shapiro09}). It is a way to get a possibility-based semantics for probabilistic nondeterministic programs, applying the idea of \cite{WuChen08,WuChen11,WuChen12} of using possibility theory to the pGCL language (derived from GCL, including probabilistic choice) presented in \cite{McIver05}.\bigskip
 
-The report is organised as follows: In Section \ref{sec:related}, we quickly present the work of other authors using possibility theory to define semantics for language derived from GCL, or defining other semantics for pGCL. In Section \ref{sec:state}, we present the pGCL language introduced by McIver and Morgan in \cite{McIver05}, as well as their predicate transformer semantics (based on Dijkstra's semantics), and how it can be used to anticipate values of positive functions, and relate it to random variables. In Section \ref{sec:contribution}, we present our own semantics, based on the semantics of McIver and Morgan, but used to anticipate values of functions taking sets as values (to model the possibility of different values without more information, resulting of the nondeterministic choice), and explain how it counters the loss of information previously mentioned. The report is finally conclued in Section \ref{sec:conclusion}.
-%The report is organised as follows: In Section \ref{sec:preliminaries}, we notably recall elementary notions such as Hoare triples and explain Dijkstra's predicate transformer semantics for GCL programs (i.e. nondeterministic programs), based on \cite{Dijkstra76}. In Section \ref{sec:state}, we present the existing work of previous authors, notably the generalisation of Dijkstra's predicate transformer semantics to pGCL programs (i.e. probabilistic nondeterministic programs) \cite{McIver05}, how the semantics can be used to compute expected values of random variables \cite{McIver05}, and the use of possibility theory in order to define other semantics for GCL programs \cite{WuChen08,WuChen11,WuChen12}. In Section \ref{sec:contribution}, we present the notion of fuzzy random variables \cite{PuriRal86,Shapiro09}, as well as our own semantics, which allows the computation of expected values of fuzzy random variables with a weakest-precondition-style calculus. The report is concluded in \ref{sec:conclusion}.
+The report is organised as follows: In Section \ref{sec:related}, we briefly present the work of other authors using possibility theory to define semantics for languages derived from GCL, or defining another style of semantics for pGCL. In Section \ref{sec:state}, we present the pGCL language introduced by McIver and Morgan in \cite{McIver05} as well as their predicate transformer semantics (based on Dijkstra's semantics), and how it can be used to anticipate values of positive functions, and relate it to random variables. In Section \ref{sec:contribution}, we present our own semantics, called \emph{expected possible value} semantics, based on the semantics of McIver and Morgan. The report is finally concluded in Section \ref{sec:conclusion}. Appendix \ref{sec:appendix} contains several examples and proofs, mainly related to our contribution in Section \ref{sec:contribution}.
 
-\todo{Make the notations uniform in the whole report: use $S$ (or $C$) in the rules, in the definitions, etc... And use $P$ when refering explicitely to a program defined as an example}
 \section{Related Work}
 \label{sec:related}
 
-In \cite{WuChen08}, the authors consider a fuzzy imperative language \cite{Bueno93,Bueno97}, which is an extended version of GCL with more instructions based on possibility theory (notably fuzzy assignments), but which does not include the probabilistic choice. They build mathematical tools (based on domain theory, more precisely on powerdomains), and present the semantics they intend to define with the tools.
-In \cite{WuChen12}, the same authors explicitely build two semantics based on the previous tools, namely a fuzzy predicate transformer semantics and a state transformer semantics, for program in the concerned fuzzy language, and prove the equivalence between the two semantic. In \cite{Tix09}, the authors develop other mathematical tools based an domain theory, and present as further work the idea of using their tools to develop a denotational semantics (otherwise known as state transformer semantics, an alternative semantics type to the predicate transformer semantics; both types are dual) for programs including probabilities and nondeterminism. (It is, to our knownledge, the only other attempt to define clearer semantics for languages including probabilities AND nondeterminism, but it focuses on another style of semantics.)
+In \cite{WuChen08}, the authors consider a fuzzy imperative language \cite{Bueno93,Bueno97}, which is an extended version of GCL with more instructions based on possibility theory (notably fuzzy assignments), but which does not include the probabilistic choice. They build mathematical tools based on domain theory (more precisely on powerdomains) and present the semantics they intend to define with the tools.
+In \cite{WuChen12}, the same authors explicitely build two semantics based on the previous tools, namely a fuzzy predicate transformer semantics and a state transformer semantics, for programs in the considered fuzzy language, and prove the equivalence between the two semantics. In \cite{Tix09}, the authors develop other mathematical tools based on domain theory, and present as further work the idea of using their tools to develop a denotational semantics (otherwise known as state transformer semantics, an alternative semantics type to the predicate transformer semantics; both types are dual; more details about denotational semantics can be found in \cite{Stoy77}) for programs including probabilities and nondeterminism. 
 
 
 
-%\section{Preliminaries}
-%\label{sec:preliminaries}
-%In this section, we consider only nondeterministic programs in the GCL language. We present the GCL language, define more formally the Hoare triples and their validity, and detail Dijkstra's weakest-precondition computation rules \cite{Dijkstra76} on which the existing semantics (presented in Section \ref{sec:state}), as well as our own semantics (presented in Section \ref{sec:contribution}) are based.
-    
-%    \subsection{The GCL Language}
-%    Let $Vars$ be the set of variables of one program, and $Vals$ the set of values to which the variables can be assigned. The state space $\Sigma$ is the set of mappings from $Vars$ to $Vals$: $$\Sigma = \{\sigma \,|\, \sigma : Vars \rightarrow Vals \}$$
-%     This is a way to model the fact that each state is characterized uniquely by the value of each variable in the program.\bigskip
-%
-%The GCL language, presented in \cite{Dijkstra76}, is defined by the following grammar\footnote{The original GCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while} (\texttt{true})\{ \texttt{skip} \}$}\footnote{Dijkstra did not define GCL with this exact grammar, but introduced nondeterminism in guarded commands. But the grammar presented here, adapted from \cite{McIver05}, is equivalent.}:
-%
-%
-%\begin{align*}
-% S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S  \,|\, \{S\} \square \{S\} \,|\ \\
-% & \texttt{ if } (b) \texttt{ then } \{ S \} \texttt{ else } \{ S \} \,|\, \texttt{ while }(b) \texttt{ do }\{S\} \\
-%\end{align*}
-%
-%This language is sufficient to describe any nondeterministic program. The \texttt{if\dots then\dots else} and \texttt{while} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if\dots then\dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ (element of $Vals$) is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. The $\{S_1\} \square \{S_2\} $ is a statement that will nondeterministically execute either $S_1$ or $S_2$. Recall that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $\{S_1\} \square \{S_2\} $ is executed a large number of times, no clear pattern should appear.\newline
-%Note that this grammar only has a choice instruction with two choices; but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using the loop) of outcomes.\bigskip
-     
-%	\subsection{Hoare triples}
-%     
-%     When model-checking programs, we need a way to define properties that are satisfied or not, depending on the state of the program. We can use the following definition of predicates.
-%     \begin{definition} 
-%     \begin{itemize}
-%     \item A \emph{predicate} is a mapping $\varphi : \Sigma \rightarrow \{0,1\}$.
-%     A state $\sigma$ is said to \emph{satisfy the predicate} $\varphi$ if $\varphi(\sigma) = 1$. (Note that $\varphi$ may also be viewed simply as a subset of $\Sigma$. )
-%     \item A partial order can be define over predicates: $\varphi_1 \leq \varphi_2$ if $\forall \sigma \in \Sigma$, $\varphi_1(\sigma) \leq \varphi_2(\sigma)$. (This partial order is equivalent to the inclusion, when considering predicates as subsets of $\Sigma$.)
-%     \end{itemize}
-%     \end{definition}
-%      
-%      We also need a formal way to define the specification of a program, which is usually considered as a Hoare triple:
-%      \begin{definition}
-%      A \emph{Hoare triple} is a triple $\{\psi\}P\{\varphi\}$ where $P$ is a program, and $\psi$ and $\varphi$ are two predicates respectively called pre- and postcondition.
-%      \end{definition}
-%      We expect the specification of a program (when it is correct) to indicate that, if the precondition holds and the program is executed, then the postcondition holds after the execution. This is formalised by the validity of Hoare triples:
-%      \begin{definition}
-%      A Hoare triple $\{\psi\}P\{\varphi\}$ is said to be \emph{valid} if each time that $P$ is executed in a state satisfying $\psi$, then $P$ terminates in a state satisfying $\varphi$.
-%      (Note that because of nondeterminism, the execution of $P$ in one state may result in several possible states. Therefore, we expect that, if $\sigma$ satisfies $\psi$, then all states in which $P$ can result when executed in $\sigma$ satisfy $\varphi$.)
-%      \end{definition}
-     
-     
 	
-%	\subsection{Predicate transformer semantics and weakest precondition calculus}
-%	Dijkstra showed that there exists, for a given program $P$ and a given postcondition $\varphi$, a particular precondition $wp[P](\varphi)$ called the \emph{weakest precondition}, greater (for the previously defined partial order) than all preconditions $\psi$ making the Hoare triple $\{\psi\}P\{\varphi\}$ valid. It is named this way, since it is indeed the weakest (in the sense of "less restrictive", or "satisfied by the most states") precondition making the Hoare triple valid.\bigskip
-%
-%It is then possible to see $wp[P]$ as a predicate transformer, transforming a postcondition $\varphi$ into the weakest-precondition $wp[P](\varphi)$. The rules of transformation (adapted from \cite{McIver05}) are given in Table \ref{table:rules_wp_gcl}. Recall that predicates are mappings from $\Sigma$ to $\{0,1\}$. The state $\sigma[x/A]$ is the state obtained when setting the variable $x$ to the value of $A$ in $\sigma$; $[\![ b : true ]\!] $ is a particular predicate, evaluating to $1$ in $\sigma$ if and only if the boolean variable $b$ is true in $\sigma$ (and symmetrically for $[\![ b : false ]\!] $). Finally, the form lfp ($\lambda X. f(X)$) denotes the least fixed point of the application $f$ (its value can be computed with Kleene's fixed point theorem). \todo{Do not forget to precise that in order for fixed points to exists, it suffices to have a complete partial order, and that it is the case here. Find a reference for Kleene's theorem.}\bigskip
-%\begin{table}
-%\begin{center}
-%\begin{tabular}{|p{3cm}|p{9cm}|}
-% \hline
-% \thead{$P$} & \thead{$wp[P](\varphi)$} \\
-% \hline
-% \thead{\texttt{skip}} & \thead{$\varphi$} \\
-% \hline
-% \thead{$x := A$} & \thead{$\lambda\sigma.\varphi(\sigma[x/A])$} \\
-% \hline
-% \thead{$P_1 ; P_2$} & \thead{$wp[P_1](wp[P_2](\varphi))$} \\
-% \hline
-% \thead{$\{P_1\} \square \{P_2\}$} & \thead{$\Min(wp[P_1](\varphi),wp[P_2](\varphi))$} \\
-% \hline
-% \thead{$\texttt{if } (b) \texttt{ then } \{ P_1 \}$ \\ $\texttt{ else } \{ P_2 \}$} & \thead{$\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[P_1](\varphi)(\sigma) + [\![b : false ]\!](\sigma) \cdot wp[P_2](\varphi)(\sigma)$} \\
-% \hline
-% \thead{$\texttt{while }(b) \texttt{ do }\{P\}$} & \thead{lfp ($\lambda X. (\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[P_1](X)(\sigma) + [\![b : false ]\!](\sigma) \cdot \varphi(\sigma))$)} \\
-% \hline
-%\end{tabular}
-%\end{center}
-%\caption{Rules for defining the predicate transformer $wp$}
-%\label{table:rules_wp_gcl}
-%\end{table}
-%
-%Applying these rules to the example program $P_1$ from Section \ref{sec:intro} with the postcondition $[x \geq 5]$ (evaluating to $1$ in state $\sigma$ if and only if $x \geq 5$ holds in $\sigma)$, we get:
-%\begin{align*}
-%& \textnormal{ }wp[x := - y ; x := x+1]([x \geq 5]) = wp[x := - y ](wp[x := x+1]([x \geq 5])) \\
-% =& \textnormal{ }wp[x := - y ]([x \geq 4]) = [-y \geq 4] = [y \leq -4] \\
-%\end{align*}
-	
-\section{State of the art: the language, and McIver and Morgan's semantics}
+\section{State of the Art: the Language, and McIver and Morgan's Semantics}
 \label{sec:state}
-In this section, we present the pGCL language and the vision of McIver and Morgan over weakest precondition calculus \cite{McIver05}, and explain (\todo{insert reference here}) how this type of calculus can be exploited to compute expected values of random variables.
-	\subsection{The pGCL language}
-	The pGCL language is an extension of Dijkstra's GCL. It was first introduced in \cite{McIver05}, and includes a new instruction that GCL did not include: the probabilistic choice. Therefore, the pGCL language allows the generation of fully probabilistic programs. It is defined by the following grammar\footnote{The original GCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while } (\texttt{true}) \texttt{ do }\{ \texttt{skip} \}$}\footnote{The rules for nondeterminism were defined by Dijkstra in guarded commands \cite{Dijkstra76}, but McIver and Morgan used an equivalent grammar and added probabilistic choice to get the grammar presented here. }:\bigskip
+In this section, we present the pGCL language and the semantics of McIver and Morgan for weakest precondition calculus \cite{McIver05}, and explain how this type of calculus can be exploited to compute expected values of random variables.
+
+	\subsection{The pGCL Language}
+	The pGCL language is an extension of Dijkstra's GCL. It was first introduced in \cite{McIver05}, and includes a new instruction that GCL did not include: the probabilistic choice. Therefore, the pGCL language allows the generation of probabilistic nondeterministic programs. It is defined by the following grammar\footnote{The original GCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while } (\texttt{true}) \texttt{ do }\{ \texttt{skip} \}$}\footnote{The rules for nondeterminism were defined by Dijkstra in guarded commands \cite{Dijkstra76}, but McIver and Morgan used an equivalent grammar and added probabilistic choice to get the grammar presented here. }:
 
 
 \begin{align*}
- S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S  \,|\, \{S\} \square \{S\} \,|\ \{S\} [p] \{S\} \,|\ \\
- & \texttt{ if } (b) \texttt{ then } \{ S \} \texttt{ else } \{ S \} \,|\, \texttt{ while }(b) \texttt{ do }\{S\} \\
+ S ::= & \texttt{ skip} \,|\, x := A \,|\, S;S  \,|\, \{S\} \square \{S\} \,|\ \{S\} [p] \{S\} \,|\ \\
+ & \texttt{ if } (b) \texttt{ then } \{ S \} \texttt{ else } \{ S \} \,|\, \texttt{while }(b) \texttt{ do }\{S\} \\
 \end{align*}
 
-This language is sufficient to describe any fully probabilistic program. The \texttt{if\dots then\dots else} and \texttt{while} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if\dots then\dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. We take interest primarly in the two remaining instructions.\newline
-The $\{S_1\} [p] \{S_2\}$ (where $p \in ]0,1[$) instruction models the fact that there is a probability $p$ that $S_1$ is executed, and a probability $1-p$ that $S_2$ is executed. Finally, $\{S_1\} \square \{S_2\} $ is a statement that will nondeterministically execute either $S_1$ or $S_2$. The difference with the probabilistic choice is that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $\{S_1\} \square \{S_2\} $ is executed a large number of times, no clear pattern should appear, whereas the execution of $S_1 [p] S_2$ a large number of times will tend to have a proportion $p$ of cases where $S_1$ is executed, and a proportion $1-p$ of cases where $S_2$ is executed.\newline
+This language is sufficient to describe any probabilistic nondeterministic program. The \texttt{if\dots then\dots else\dots} and \texttt{while\dots do\dots} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if\dots then\dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. We take interest primarly in the two remaining instructions.\newline
+The $\{S_1\} [p] \{S_2\}$ (where $p \in ]0,1[$) instruction models the fact that there is a probability $p$ that $S_1$ is executed, and a probability $1-p$ that $S_2$ is executed. Finally, $\{S_1\} \square \{S_2\} $ is a statement that will nondeterministically execute either $S_1$ or $S_2$. The difference to the probabilistic choice is that no probability can be assigned to $S_1$ or $S_2$. In this case, we only know that both executions are possible.\newline
+%This means that if $\{S_1\} \square \{S_2\} $ were to be executed a large number of times , no clear pattern should appear, whereas the execution of $\{S_1\} [p] \{S_2\}$ a large number of times will tend to have a proportion $p$ of cases where $S_1$ is executed, and a proportion $1-p$ of cases where $S_2$ is executed.\newline
 Note that this grammar only has choice instructions with two outcomes; but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using loops) of outcomes.\bigskip
 
-	\subsection{Predicate transformer semantics and weakest precondition calculus}
+	\subsection{Predicate Transformer Semantics and Weakest-Precondition Calculus}
 	Let $\Sigma$ be the set of program states. Each state is uniquely characterized by the values of each variable in the state.\bigskip
 	
 	\begin{definition}{\textnormal{(Predicate and binary predicate)}}
 	\item A \emph{predicate} $\varphi$ is a function from $\Sigma$ to $[0,1]$. One says that each state $\sigma$ has a probability $\varphi(\sigma)$ of satisfying $\varphi$.
-	\item When $\varphi$ takes only the values $0$ and $1$, it is called a \emph{binary predicate}. In this case, one abusively says that $\sigma$ satisfy $\varphi$ if and only if $\varphi(\sigma) = 1$.
+	\item When $\varphi$ takes only the values $0$ and $1$, it is called a \emph{binary predicate}. In this case, one abusively says that $\sigma$ satisfies $\varphi$ if and only if $\varphi(\sigma) = 1$.
 	\end{definition}
 
-    Let $P$ be a pGCL program and let $\varphi$ be a binary predicate.
-	What is the probability that the execution of $P$ in a state $\sigma$ is guaranteed to terminate in a state satisfying the postcondition $\varphi$ ? McIver and Morgan extended Dijkstra's vision of weakest precondition calculus, such that $wp[P](\varphi)(\sigma)$ is the answer, with the following definition:
+    Let $S$ be a pGCL program and let $\varphi$ be a binary predicate.
+	What is the probability that the execution of $S$ in a state $\sigma$ is guaranteed to terminate in a state satisfying the postcondition $\varphi$? McIver and Morgan extended Dijkstra's weakest precondition calculus, such that $wp[S](\varphi)(\sigma)$ is the answer, with the following definition:
 	\begin{definition}
-	If $P$ is a pGCL program, then the predicate transformer semantics of $P$ is given by $wp[P]$ (defined by the rules\footnote{These rules correspond to the case where the nondeterministic choice is considered to be the demonic choice, as Dijkstra first intended.} in Table \ref{table:rules_wp_pgcl}).\newline
-	$wp[P]$ is a predicate transformer, i.e. for all postconditions $\varphi$, $wp[P](\varphi)$ is a predicate, such that $\forall \sigma \in \Sigma$, $wp[P](\varphi)(\sigma)$ is the probability that the execution of $P$ in $\sigma$ terminates in a state satisfying $\varphi$
+	If $S$ is a pGCL program, then the predicate transformer semantics of $S$ is given by $wp[S]$ (defined by the rules\footnote{These rules correspond to the case where the nondeterministic choice is considered to be the demonic choice, as Dijkstra first intended.} in Table \ref{table:rules_wp_pgcl}).\newline
+	$wp[S]$ is a predicate transformer\footnote{Note that the rules allow the computation of $wp[S](\varphi)$ for all arbitrary predicates $\varphi$, but in the practice, we only want to compute $wp[S](\varphi)$ where $\varphi$ is a binary predicate, because when checking programs, we want to verify whether the final states satisfy a property or not, and not to verify whether a final states satisfies a property with a certain probability. In the only cases where $\varphi$ is not a binary predicate, $\varphi$ will result from the computation of another weakest precondition $wp[S'](\psi)$
+	}, i.e. for all postconditions $\varphi$, $wp[S](\varphi)$ is a predicate, such that $\forall \sigma \in \Sigma$, $wp[S](\varphi)(\sigma)$ is the probability that the execution of $S$ in $\sigma$ terminates in a state satisfying $\varphi$.
 	\end{definition}
-	Therefore, $P$ is described by the semantics of McIver and Morgan as an object $wp[P]$ transforming the predicate $\varphi$ into the predicate $wp[P](\varphi)$.
+	Therefore, $S$ is described by the semantics of McIver and Morgan as an object $wp[S]$ transforming the predicate $\varphi$ into the predicate $wp[S](\varphi)$.
 	
-	\begin{table}
+	\begin{table*}[!t]
 \begin{center}
 \begin{tabular}{|p{3cm}|p{9cm}|}
  \hline
- \thead{$P$} & \thead{$wp[P](\varphi)$} \\
+ \thead{$\bm{S}$} & \thead{$\bm{wp[S](\varphi)}$} \\
  \hline
  \thead{\texttt{skip}} & \thead{$\varphi$} \\
  \hline
  \thead{$x := A$} & \thead{$\lambda\sigma.\varphi(\sigma[x/A])$} \\
  \hline
- \thead{$P_1 ; P_2$} & \thead{$wp[P_1](wp[P_2](\varphi))$} \\
+ \thead{$S_1 ; S_2$} & \thead{$wp[S_1](wp[S_2](\varphi))$} \\
  \hline
- \thead{$\{P_1\} \square \{P_2\}$} & \thead{$\lambda\sigma. \Min(wp[P_1](\varphi)(\sigma),wp[P_2](\varphi)(\sigma))$} \\
+ \thead{$\{S_1\} \square \{S_2\}$} & \thead{$\lambda\sigma. \Min(wp[S_1](\varphi)(\sigma),wp[S_2](\varphi)(\sigma))$} \\
  \hline
- \thead{$\{P_1\} [p] \{P_2\}$} & \thead{$\lambda\sigma. p\cdot wp[P_1](\varphi)(\sigma) + (1-p)\cdot wp[P_2](\varphi)(\sigma)$} \\
+ \thead{$\{S_1\} [p] \{S_2\}$} & \thead{$\lambda\sigma. p\cdot wp[S_1](\varphi)(\sigma) + (1-p)\cdot wp[S_2](\varphi)(\sigma)$} \\
  \hline
- \thead{$\texttt{if } (b) \texttt{ then } \{ P_1 \}$ \\ $\texttt{ else } \{ P_2 \}$} & \thead{$\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[P_1](\varphi)(\sigma) + [\![b : false ]\!](\sigma) \cdot wp[P_2](\varphi)(\sigma)$} \\
+ \thead{$\texttt{if } (b) \texttt{ then } \{ S_1 \}$ \\ $\texttt{ else } \{ S_2 \}$} & \thead{$\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[S_1](\varphi)(\sigma) + [\![b : false ]\!](\sigma) \cdot wp[S_2](\varphi)(\sigma)$} \\
  \hline
- \thead{$\texttt{while }(b) \texttt{ do }\{P\}$} & \thead{lfp ($\lambda X. (\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[P_1](X)(\sigma) + [\![b : false ]\!](\sigma) \cdot \varphi(\sigma))$)} \\
+ \thead{$\texttt{while }(b) \texttt{ do }\{S\}$} & \thead{lfp ($\lambda X. (\lambda\sigma. [\![b : true ]\!](\sigma) \cdot wp[S](X)(\sigma) + [\![b : false ]\!](\sigma) \cdot \varphi(\sigma))$)} \\
  \hline
 \end{tabular}
 \end{center}
 \caption{Rules for defining the predicate transformer $wp$}
 \label{table:rules_wp_pgcl}
-\end{table}
-The state $\sigma[x/A]$ is the state obtained when syntactically replacing the variable $x$ by the value of $A$ in $\sigma$; $[\![ b : true ]\!] $ is a binary predicate, evaluating to $1$ in $\sigma$ if and only if the boolean expression $b$ is true in $\sigma$ (and symmetrically for $[\![ b : false ]\!] $). Finally, the form lfp ($\lambda X. f(X)$) denotes the least fixed-point of the application $f$ (where the $X$ are predicates). The value of the least fixed-point can be computed with Kleene's fixed-point theorem (under certain hypotheses, verified here; more details in Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}).\bigskip
+\end{table*}
+The state $\sigma[x/A]$ is the state obtained when syntactically replacing the variable $x$ by the value of $A$ in $\sigma$; $[\![ b : true ]\!] $ is a binary predicate, evaluating to $1$ in $\sigma$ if and only if the boolean expression $b$ is true in $\sigma$ (and symmetrically for $[\![ b : false ]\!] $). Finally, lfp ($\lambda X. f(X)$) denotes the least fixed-point of the function $f$ (in this case, the $X$ are predicates). The value of the least fixed-point can be computed with Kleene's fixed-point theorem (under certain hypotheses, verified here; more details in Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}).\bigskip
 
-\begin{remark} We will often simplify the expressions in the table by writing for instance $\Min(wp[P_1](\varphi),wp[P_2](\varphi))$ instead of $\lambda\sigma. \Min(wp[P_1](\varphi)(\sigma),wp[P_2](\varphi)(\sigma))$, or $p\cdot wp[P_1](\varphi) + (1-p)\cdot wp[P_2](\varphi)$ instead of $\lambda\sigma. p\cdot wp[P_1](\varphi)(\sigma) + (1-p)\cdot wp[P_2](\varphi)(\sigma)$. But recall that these objects are predicates.
-\end{remark}
-	
-	\notsure{Note that the rules allow the computation of $wp[P](\varphi)$ for all arbitrary predicates $\varphi$, but in the practice, we only want to compute $wp[P](\varphi)$ where $\varphi$ is a binary predicate, because when checking programs, we want to verify whether the final states satisfy a property or not, and not to verify whether a final states satisfies a property with a certain probability. In the only cases where $\varphi$ is not a binary predicate, $\varphi$ will result from the computation of another weakest precondition $wp[P'](\psi)$} \bigskip
-	
+\begin{remark} We will often simplify the expressions in the table by writing for instance $\Min(wp[S_1](\varphi),wp[S_2](\varphi))$ instead of $\lambda\sigma. \Min(wp[S_1](\varphi)(\sigma),wp[S_2](\varphi)(\sigma))$ or $p\cdot wp[S_1](\varphi) + (1-p)\cdot wp[S_2](\varphi)$ instead of $\lambda\sigma. p\cdot wp[S_1](\varphi)(\sigma) + (1-p)\cdot wp[S_2](\varphi)(\sigma)$. But recall that these objects are predicates.
+\end{remark}\bigskip
 
-
-
-Applying these rules to the example program $P_1$ from Section \ref{sec:intro} with the postcondition $[x \geq 5]$ (binary predicate evaluating to $1$ in state $\sigma$ if and only if $x \geq 5$ holds in $\sigma)$, we get (the details with $\lambda$-calculus are left to the reader):
-\begin{align*}
- \textnormal{ }wp[x := - y ; x := x+1]([x \geq 5]) = wp[x := - y ](wp[x := x+1]([x \geq 5]))
-\end{align*}
-The assignment rules determines that $wp[x := x+1]([x \geq 5]) = \lambda\sigma. [x \geq 5](\sigma[x/x+1])$.
-It turns out that:
-\begin{align*}
-wp[x := x+1]([x \geq 5]) = [x \geq 4]
-\end{align*}
-\begin{proof}
-Recall that $[x \geq 5](\sigma) = 1$ if $x \geq 5$ in $\sigma$ and $0$ else. Therefore $[x \geq 5](\sigma[x/x+1]) = 1$ if $x \geq 5$ in $\sigma[x/x+1]$ and $0$ else. This is equivalent to: $[x \geq 5](\sigma) = 1$ if $x+1 \geq 5$ in $\sigma$ and $0$ else. Therefore, $[x \geq 5](\sigma[x/x+1]) = [x+1 \geq 5](\sigma)$, and $wp[x := x+1]([x \geq 5]) = [x+1 \geq 5] = [x \geq 4]$.
-\end{proof}
- We resume the computation:
-\begin{align*}
-& \textnormal{ }wp[x := - y ; x := x+1]([x \geq 5]) = wp[x := - y ](wp[x := x+1]([x \geq 5])) \\
- =& \textnormal{ }wp[x := - y ]([x+1 \geq 5]) = \textnormal{ }wp[x := - y ]([x \geq 4]) = [-y \geq 4] = [y \leq -4] \\
-\end{align*}
-
-	One can also apply these rules to the program $P_0$ and get the results presented in Section \ref{sec:intro}. The calculation is done in Appendix \ref{subsec:wp_p0}. \todo{Maybe move this calculation here if there is enough place. It should be more logical, since it is our running example.}
-	
-	\subsection{Anticipating values, link with random variables}
-    \label{subsec:anticipation}
-    
-	In the practice, weakest precondition calculus can be used to anticipate the value of certain functions. Recall that with the simple program $P_1$ given in Section \ref{sec:intro}, we proved that $wp[P_1]([x \geq 5]) = [y \leq -4]$. As $P_1$ is deterministic, we get that, if $\sigma$ satisfies $[y \leq -4]$, then the state obtained after executing $P_1$ in $\sigma$ satisfies $[x \geq 5]$; and if $\sigma$ does not satisfy $[y \leq -4]$, then the state obtained after executing $P$ in $\sigma$ does not satisfy $[x \geq 5]$. We can say that the function $[y \leq -4]$ anticipates the value of $[x \geq 5]$ after the execution of $P_1$.\bigskip
-	
-	\todo{Write references for what follows}
-It is in fact possible, in the deterministic case, to anticipate values of other functions, such as the function associating to $\sigma$ the value of $x^2$ in $\sigma$, or the value of $|\textnormal{sin}(y)|$ in $\sigma$. However, due to certain constraints in order to ensure the existence of least fixed-points and make the computation possible, we must restrict ourselves to functions from $\Sigma$ to $\RRposi$ (where $\RRposi = [0;+\infty]$). Let $\mathcal{F} = \{f \,|\, f : \Sigma \rightarrow \RRposi \}$. \footnote{With this restriction, a complete partial order can be defined on $\mathcal{F}$ and Kleene's fixed point theorem can be applied. See Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}} That restriction is not a problem in practice, as one can always decompose an arbitrary function as two functions, namely, its absolute value and its sign (and carefully redefine all operations between functions, such as $+$, $\times$, etc.). \bigskip
-
-Therefore, it is possible to extend the previous predicate transformer semantics in an "anticipated-value" semantics for deterministic programs, by viewing programs as function transformers $\mathcal{F} \rightarrow \mathcal{F}$.
-The anticipation of values can be extended to nondeterministic programs (by considering that, in the nondeterministic choice, the anticipated value is the least one), and to fully probabilistic programs, by taking the ponderated mean between the two possible values. The rules of computation are rigorously the same as in Table \ref{table:rules_wp_pgcl}. But in this case, we apply them to a function $f \in \mathcal{F}$, and obtain another function $wp[P](f) \in \mathcal{F}$. (Note that predicates are also elements of $\mathcal{F}$. Hence, the previous computations still work in this context.)
-
-\begin{notation} In the following, we will denote by $x_\sigma$ the value of the program variable $x$ in $\sigma$, and we will assimilate the program variable $x$ to the function $\underline{x} : \sigma \rightarrow x_\sigma$. (This is a simplified notation. In the practice, we should consider one function giving the absolute value of $x_\sigma$ and another giving its sign.) Hence, $\underline{x} \in \mathcal{F}$, it is a function giving the value of $x$ in each state.
-\end{notation}
-
-\begin{example} Consider the program $P_1$ from Section \ref{sec:intro}, and the function $\underline{x}^2 \in \mathcal{F}$. Its value after the execution of $P_1$ can be computed with:
-\begin{align*}
-& \textnormal{ }wp[x := - y ; x := x+1](\underline{x}^2) = wp[x := - y ](wp[x := x+1](\underline{x}^2)) \\
- =& \textnormal{ }wp[x := - y ]((\underline{x}+1)^2) = (1-\underline{y})^2  \\
-\end{align*}
-For example, if $(1-\underline{y})^2(\sigma) = 4$, then $\sigma$ is a state where $(1-y_\sigma)^2 = 4$, for instance where $y_\sigma = 3$. Then by executing $P_1$ in $\sigma$, $x$ is set to $-3$, and then to $-2$. In the final state $\sigma'$, we have $x_{\sigma'}^2 = 2$. Therefore, $(1-\underline{y})^2$ anticipates the value that $\underline{x}^2$ takes after the execution of the program.
-\end{example}
-
-\begin{example} Consider the program $P_0$ from Section \ref{sec:intro}, we can anticipate the value of the variable $x$ by computing the anticipate value of the function $\underline{x}$ (we should normally anticipate the value of $\underline{|x|}$, but we easily see that they are the same in this context):
-\begin{align*}
-wp[P_0](\underline{x}) &= wp[ \{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \} ](\underline{x}) \\
-&= p\cdot wp[ \{x := 2\} \square \{x := 5\} ](x) + (1-p)\cdot wp[x := 7](\underline{x}) \\
-&= p\cdot\Min(wp[x := 2](\underline{x}),wp[x := 5](\underline{x})) + (1-p)\cdot wp[x := 7](\underline{x}) \\
-&= \lambda\sigma. p\cdot\Min(wp[x := 2](\underline{x})(\sigma),wp[x := 5](\underline{x})(\sigma))\\ & + (1-p)\cdot wp[x := 7](\underline{x})(\sigma) \\
-&= \lambda\sigma. p\cdot\Min(\underline{x}(\sigma[x/2]),\underline{x}(\sigma[x/5])) + (1-p)\cdot \underline{x}(\sigma[x/7]) \\
-&= \lambda\sigma. p\cdot\Min(2,5) + (1-p)\cdot 7 \\
-&= \lambda\sigma. 2p+7(1-p)
-\end{align*}
-\end{example}
-We leave the result in this form to underline interesting remarks.
-
-\begin{remark}
-For each $\sigma$, $wp[P_0](\underline{x})(\sigma)$, which is the anticipated value of $x$ after the execution of $P_0$ in $\sigma$, has the form of the expected value $E(X)$ of a positive random variable $X$ taking the value $2$ with the probability $p$, and the value $7$ with the probability $1-p$.\newline
-\end{remark}
-\begin{theorem}
-Let $P$ be a probabilistic program (without nondeterminism), let $\sigma$ be an initial state, and let $f \in \mathcal{F}$ be a function. For each $\omega$, the execution of $P$ in $\omega$ can be informally divided as several "branches", called execution schemes $\omega$ (at each choice, the current branch is divided into two branches). We consider an execution scheme to be a full execution, i.e. at the end of an $\omega$, $P$ terminated, or is looping infinitely. Let $\Omega_\sigma$ be the set of execution schemes obtained when executing $P$ in $\sigma$. A probability can be assigned to each $\omega \in \Omega_\sigma$. We can therefore see the value of $f$ after the execution of $P$ in $\sigma$ as a positive random variable $X_\sigma : \Omega_\sigma \rightarrow \RRposi$.\newline
-Thus, $wp[P](f) = \lambda\sigma.E(X_\sigma)$.
-\end{theorem}
-This result can be more clearly observed in Example \ref{ex:diff_rv} in Subsection \ref{subsec:ex_ant}.
-\todo{Maybe move the example here.}
-\begin{remark}
-The previous theorem can be extended to fully probabilistic programs by applying rules in Table \ref{table:rules_wp_pgcl} and by considering the nondeterministic choice as the demonic choice. Note however that the $\Omega_\sigma$ that we obtain depend on the postcondition we are computing (as shown in Example \ref{ex:diff_ex_sch} in Subsection \ref{subsec:ex_ant}), because the the demonism in nondeterministic choice will restrict each of these choices to one outcome, depending on the postcondition.\newline
-\end{remark}
-\begin{remark}
-The result of the computation of $wp[P_0](\underline{x})$ still does not take in account the possibility that $x$ can take the value $5$.
-Symmetrically, if the nondeterministic choice was to be considered as the angelic choice, we would get that $wp[P_0](\underline{x}) = 5p+7(1-p)$ and one result would be missing.
-\end{remark}
-
-These results are therefore counterintuitive. At this point, we defined our own semantics by considering fuzzy random variables, instead of random variables.
-	
-%	\subsection{Chinese work}
-%	\todo{Obviously change this title when you have a better idea.}
-%\temp{
-%In this whole report, we will primarly consider the pGCL language, presented in \cite{McIver05}, and defined by the following grammar\footnote{The original pGCL included an \texttt{abort} instruction corresponding to an error case. We chose, not to include it, as it can be represented by $\texttt{while} (\texttt{true})\{ \texttt{skip} \}$}:
-%
-%
-%\begin{align*}
-% S ::= & \texttt{ skip } \,|\, x := A \,|\, S;S \,|\, \{S\} [p] \{S\} \,|\, \{S\} \square \{S\} \,|\ \\
-% & \texttt{ if } (b) \texttt{ then } \{ S \} \texttt{ else } \{ S \} \,|\, \texttt{ while }(b) \texttt{ do }\{S\} \\
-%\end{align*}
-%
-%This language is sufficient to describe any probabilistic or nondeterministic program. The \texttt{if\dots then\dots else} and \texttt{while} structure are the usual control structures encountered in many languages. The \texttt{skip} instruction corresponds to an empty instruction, where nothing is done (it is included in the language so that we do not have to create a specific \texttt{if\dots then\dots} instruction for the case where no \texttt{else} is needed.) $x := A$ is an assignment statement, where the program variable $x$ is set to the value of the expression $A$ in the current state. $S_1 ; S_2$ is a sequence assignment, modeling the execution of $S_1$ followed by $S_2$. We take interest primarly in the two remaining instructions.\newline
-%The $\{S_1\} [p] \{S_2\}$ instruction models the fact that there is a probability $p$ that $S_1$ is executed, and a probability $1-p$ that $S_2$ is executed. Finally, the $\{S_1\} \square \{S_2\} $ (first introduced by Dijkstra in \cite{Dijkstra76}) is a statement that will nondeterministically execute either $S_1$ or $S_2$. The difference with the probabilistic choice is that no probability can be assigned to $S_1$ or $S_2$ because it makes no sense. This means that if $\{S_1\} \square \{S_2\} $ is executed a large number of times, no clear pattern should appear, whereas the execution of $S_1 [p] S_2$ a large number of times will tend to have a proportion $p$ of cases where $S_1$ is executed, and a proportion $1-p$ of cases where $S_2$ is executed.\newline
-%Note that we are using choice instructions with only two choices, but combination of instructions make possible the realisation of choices with any finite number (and even a countable number when using the loop) of outcomes.\bigskip
-%}
-
-\section{A new semantics based on possibilities}
-\label{sec:contribution}
-
-In this section, we consider programs over the pGCL language presented in Section \ref{sec:state}. As we stated before, previous existing semantics give nonsatisfying results, both when computing weakest preconditions of predicates in fully probabilistic programs and when anticipating values of functions in fully probabilistic programs. Our goal is to define a new semantics, which should be based on possibility theory, and would more clearly represent each possible outcome.  Recall that we mentioned in Section \ref{sec:state} that weakest-precondition calculus could be used in order to anticipate values of functions of $\mathcal{F}$ (i.e. functions from $\Sigma$ to $\RRposi$), and that the corresponding computation in fact gave, for each state $\sigma$, the expected value of a random variable (i.e. the value of the function we are anticipating, after the execution of the program in $\sigma$). Our main idea here is to replace functions from $\Sigma$ to $\RRposi$ by functions from $\Sigma$ to $\mathcal{P}(\RRposi)$, and to identify the anticipation of their values as the expected value of \textit{Fuzzy random variable} (introduced in \cite{PuriRal86}, and simplified in \cite{Shapiro09}).
-
-\subsection{Fuzzy random variables}
-%Let $\Sigma$ be the set of states. We consider that the variables in our programs can only take \underline{real positive} values.\footnote{This is due to constraints explained further. But note that we can implement an arbitrary real variable by two variables, one for its absolute value, and one for its sign.} 
-We adapted the following definition from \cite{PuriRal86}.
-
-\begin{definition}{\textnormal{(Fuzzy Random Variable)\newline}}
- A Fuzzy Random Variable (short: FRV) is a mapping $X$ from a probabilistic space $(\Omega,\mathcal{A},Pr)$ to the powerset $P(\RRposi)$. This means that, if $X$ is an FRV, then for all $\omega \in \Omega$, $X(\omega)$ is a subset of $\RRposi$. In fact, it is a set of possible values for $X$ in the event $\omega$.
-\end{definition}
-
-In \cite{PuriRal86}, there exists a definition of the expected value $E(X)$ of an arbitrary fuzzy random variable $X$ over an arbitrary probabilistic space. However, in our context, it suffices to consider $\Omega$ as a countable space $\{\omega_1, \omega_2, \dots \}$ (recall that our events are execution schemes) and fuzzy random variables taking as values only sets of positives values (as we previously defined them). Then, by using the definition of expected value in \cite{PuriRal86} and applying our simplifications, we come to the following definition of the expected value, which is sufficient in our context:
-
-\begin{definition}
-If $X$ is a fuzzy random variable from $\Omega$ to $\RRposi$, then we can define the expected value $E(X)$ as follows:
-$$E(X) = \{ \sum_{n = 1}^{+\infty} t_iPr(\omega_i) \,|\, \forall i \in \NN^*, t_i \in X(\omega_i) \} \subset \RRposi$$
-\end{definition}
-One can interprete this definition as follows: if $X$ is a positive fuzzy random variable (i.e. a random variable associating to each event a set of positive values), then $E(X)$ is the set obtained by computing all possible (even infinite) averages (by picking one value in each $X(\omega_i)$).
-
-%\begin{example}
-% In the following, for each program variable $x$, we denote by $\underline{x}$ the FRV such that, for all $\sigma \in \Sigma$, $\underline{x}(\sigma) = \{ x_{\sigma} \}$, meaning that $\underline{x}$ associates to each state $\sigma$ the singleton containing the value $x_\sigma$, which is the value of the program variable $x$ in the set $\sigma$. (Recall that each state is characterized uniquely by a tuple containing the values of each variable in a given order.). Therefore, we can say that the FRV $\underline{x}$ models the program variable $x$.
-%\end{example}
-%
-%A fuzzy random variable $X$ over a program can model several concepts. For instance, it can be used to model the runtime of a program executed in a state $\sigma$ (which is why we chose to include $\infty$); in this example, $X(\sigma)$ would give all possible runtimes for the execution of one program starting from $\sigma$. It can also model the value of a program variable (or any function over the program variables) after the execution of a program.\newline
-
-% For instance, for any program variable $x$, with the previous notations, for all $\sigma \in \Sigma$, $\underline{x}(\sigma) = \{ x \}$ is the expected value of the program variable $x$ after executing the program $\texttt{skip}$ in $\sigma$.\newline
-% As all previous computations can be obtained from program variables (for instance, the runtime of a program (in the sense of "number of instructions executed before termination") can be obtained by adding a program variable $t$ representing the current runtime, initially $0$, and incrementing it at each instruction), we will in the following only consider computation of expected values of fuzzy random variables characterizing the value of a program variable after the execution of the program in one state.\newline
-
-\subsection{Contribution: the weakest-precondition-style calculus of anticipation of values of set-valued functions, link with fuzzy random variables}
-Let $\mathcal{F}' = \{f \,|\, f : \sigma \rightarrow P(\RRposi) \}$ be the new set of functions whose values we want to anticipate. What it intuitively means is that $f$ maps each $\sigma$ to a set of "possible values". (As we previously explained, restriction to positive values only is not a problem in the practice.)
 \begin{example}
-In the following, we redefine the application $\underline{x}$ by : $\underline{x} = \lambda\sigma. \{x_\sigma\}$, meaning that $\underline{x}$ associates to $\sigma$ a set containing the only possible value for $x$ in this state (which is directly accessible, since each state is characterized uniquely by the values of each variable).
-\end{example}
-
-We replace the $wp$ operator by the following operator:
-\begin{definition}
- 	If $P$ is a pGCL program, then our \todo{find a proper name} semantics of $P$ is given by $ev[P]$ (defined by the rules in Table \ref{table:rules_ev}).\newline
-	$ep[P]$ is a function transformer, i.e. for all functions $f \in \mathcal{F}'$, then $ev[P](f) \in \mathcal{F}'$.
-\end{definition}
-
-Recall that we mentioned in Subsection \ref{subsec:anticipation} that, if $f \in \mathcal{F}$ and if $P$ is a pGCL program, then the value of $f$ after the execution of $P$ in a state $\sigma$ was given by a random variable $X_\sigma$, and $wp[P](f)$ in fact gave $E(X_\sigma)$ for each $\sigma$.\newline
-Symmetrically, here, if $f \in \mathcal{F}'$, then the value of $f$ (which is a set) after the execution of $P$ in a state $\sigma$ is given by a fuzzy random variable $X_\sigma$, and $ev[P](f)$ in fact gives $E(X_\sigma)$ (which is a set) for each $\sigma$. This confirms that $ev[P]$ transforms a function of $\mathcal{F}'$ in another function of $\mathcal{F}'$.\newline
-%Concretely, if $X$ is a FRV (i.e. an application mapping each state $\sigma$ to a subset $X(\sigma)$ of $\RRposi$), then $ev[S](X)(\sigma)$ is the set of possible expected values of the FRV $X$ after executing $S$ in the state $\sigma$.\newline
-%For instance, if we consider a program variable $x$, then the FRV $\underline{x}$ maps each state $\sigma$ to the set $\{x_\sigma\}$. Our goal is that the FRV $\underline{x}$ is transformed by $ev[S]$ into the FRV $ev[S](\underline{x})$, which maps each $\sigma$ to the set $ev[S](\underline{x})(\sigma)$ of possible values of the variable $x$ after executing $S$ in the state $\sigma$. Therefore, we can say that $ev[S](\underline{x})(\sigma)$ is the \emph{expected value} (or rather \emph{set of possible expected values}) of the FRV $\underline{x}$ after executing $S$ in the state $\sigma$; or, with other words, the set of possible expected values of the program variable $x$ after executing $S$ in $\sigma$.\newline
-
-
-\begin{table}
-\begin{center}
-\begin{tabular}{|p{3cm}|p{9cm}|}
- \hline
- \thead{$S$} & \thead{$ev[S](f)$} \\
- \hline
- \thead{\texttt{skip}} & \thead{$f$} \\
- \hline
- \thead{$x := A$} & \thead{$\lambda\sigma.f(\sigma[y/A])$} \\
- \hline
- \thead{$S_1 ; S_2$} & \thead{$ev[S_1](ev[S_2](f))$} \\
- \hline
- \thead{$S_1 [p] S_2$} & \thead{$\lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \}$} \\
- \hline
- \thead{$\{S_1\} \square \{S_2\}$} & \thead{$\lambda\sigma. ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma)$} \\
- \hline
- \thead{$\texttt{if } (b) \texttt{ then } \{ S_1 \}$ \\ $\texttt{ else } \{ S_2 \}$} & \thead{$\lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$ \\$t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \}$} \\
- \hline
- \thead{$\texttt{while }(b) \texttt{ do }\{S\}$} & \thead{lfp ($\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$\\$t_1 \in ev[S](X)(\sigma), t_2 \in f(\sigma) \}$))} \\
- \hline
-\end{tabular}
-\end{center}
-\caption{Rules for defining the FRV transformer $ev$}
-\label{table:rules_ev}
-\end{table}
-
-Consider the running example $P$: $\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}$. The value of $x$ after the execution of $P$ in a given initial state is given by a fuzzy random variable. We want to compute its expected value. Thus, we have to determine $ev[P](\underline{x})$. It is a function of $\sigma$, but the form of $P$ gives the intuition that it will be a constant function, not depending on $\sigma$.\newline
-With the rules presented in Table \ref{table:rules_ev}, we can see that this requires first to compute the functions $ev[\{x := 2\} \square \{x := 5\}](\underline{x})$ and $ev[x := 7](\underline{x})$; besides, the former requires to compute $ev[x := 2](\underline{x})$, $ev[x := 5](\underline{x})$.\newline
-
-We get that:
-$$ev[x := 2](\underline{x}) = \lambda\sigma.\underline{x}(\sigma[x/2]) = \lambda\sigma.\{x_{\sigma[x/2]}\} = \lambda\sigma.\{2\}$$ 
-Indeed, the value of $x$ in $\sigma[x/2]$ is necessarily $2$. Recall that $\sigma[x/2]$ is the state obtained after setting $x$ to $2$ in the state $\sigma$. This means that the expected value of $x$ after executing $x := 2$ in any state $\sigma$ can only be $2$. By the same computation, we get $ev[x := 5](\underline{x}) = \lambda\sigma.\{5\}$ and $ev[x := 7](\underline{x}) = \lambda\sigma.\{7\}$.\newline
-
-Now, we can compute that:
-\begin{align*}
-ev[\{x := 2\} \square \{x := 5\}](\underline{x}) &= \lambda\sigma. ev[x := 2](\underline{x})(\sigma) \cup ev[x := 5](\underline{x})(\sigma) \\
-&= \lambda\sigma. \{2\} \cup \{5\} = \lambda\sigma.\{2,5\} 
-\end{align*}
-This means that the possible expected values of $x$ after executing $\{x := 2\} \square \{x := 5\}$ in any state $\sigma$ are $2$ and $5$.\newline
-
-Finally, 
-\begin{align*}
-ev[P_0](\underline{x}) &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[\{x := 2\} \square \{x := 5\}](\underline{x})(\sigma), t_2 \in ev[x := 7](\underline{x})(\sigma) \} \\
-&= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in \{2,5\}, t_2 \in \{7\} \} \\
-&= \lambda\sigma. \{2p+7(1-p),5p+7(1-p) \} 
-\end{align*}
-
-Contrary to what was observed with the semantics of McIver and Morgan, no information is lost here.
-The results we just showed means that, when we execute $P_0$ in a state $\sigma$, there are two possible values for the program variable $x$ after the execution. The first one results of the case where $x := 2$ is executed in the nondeterministic choice. In this case, anticipating the value of $x$ is the same as computing the expected value of a classical random variable as we did in Subsection \ref{subsec:anticipation}. The second one is obtained symmetrically in the case where $x := 5$ is executed.\newline
-The link with fuzzy random variables is clearer, as the previous results shows that, for each $\sigma$, $ev[P_0](\underline{x})(\sigma)$ is the expected value of a fuzzy random variable taking the value $\{2,5\}$ with a probability $p$ (this corresponds to the first execution scheme, where the left branch of the probabilistic choice is executed. And this case, $x$ has indeed a probability $p$ of being set to $2$ or $5$. Both choices are \underline{possible}, and that is why both values belong to the set), and the value $\{7\}$ with a probability $1-p$.
-\bigskip
-
-Finally, we can explain how our semantics is related to possibility theory. Recall that McIver and Morgan extended $wp$ to fully probabilistic programs such that, if $\varphi$ is a predicate, then $wp[P](\varphi)(\sigma)$ is the probability that $P$, when executed in $\sigma$, terminates in a state where $\varphi$ is satisfied.\newline
-If we denote by $\mathds{1}_U$ the indicator function of a set $U$, and if we take $f \in \mathcal{F}'$, then $\mathds{1}_{ev[P](f)(\sigma)}(a)$ is the possibility that $a$ is an expected value of $f$ after the execution of $P$ in the state $\sigma$. And we can extend this result: if $V \subset \RRposi$, then $\mathds{1}_{ev[P](f)(\sigma)}(V) = \Sup_{a \in V}(\mathds{1}_{ev[P](f)(\sigma)}(a))$ is the possibility that at least one value in $V$ is an expected value of $f$ after the execution of $P$ in $\sigma$.
-
-\section{Conclusion}
-\label{sec:conclusion}
-In this report, we presented the vision of weakest-precondition calculus over pGCL program, detailed by McIver and Morgan in \cite{McIver05}. We explained how the weakest-precondition calculus could be used in order to anticipate the values of particular functions (the restriction to positive functions is due to constraints of having a complete partial order over the set of functions in order to ensure the existence of least fixed-points and make the computation possible), and explained the link with random variables, i.e. the value of a function after the execution of program in a given initial state is a random variable, and the weakest precondition calculus gives access to its expected values. We underlined that nevertheless, the results obtained with the semantics of McIver and Morgan were not satisfying with the demonic choice, and neither with the angelic choice, as both conventions omitted essential information. Finally, we presented the notion of fuzzy random variables, and our own semantics, where we anticipate values of functions taking not positive real numbers as values, but set of positive real numbers. We explained the link between our semantics and the expected value of fuzzy random variables.
-
-
-\bibliography{ref1}{}
-\bibliographystyle{plain}
-
-\newpage
-\section{Appendix}
-\label{sec:appendix}
-
-\subsection{Kleene's Fixed point theorem}
-\label{subsec:kleene}
-
-Let $P$ be a set with a partial order $\leq$.
-\begin{definition}
-$P$ is a \emph{complete partial order} if the following conditions are satisfied:
-\begin{itemize}
-\item $\leq$ has a minimal element, denoted $\bot$ (such that $\forall x \in P$, $\bot \leq x$)
-\item for each subset $S = \{x_1, x_2, \dots \} \subset P$ where $x_1 \leq fx2 \leq \dots $, $S$ has a least upper bound $\Sup(S)$ in $P$ (Such a set $S$ is called a \emph{chain})
-\end{itemize}
-\end{definition}
-
-\begin{theorem}{\textnormal{Kleene's fixed-point theorem}}
-If $P$ is a complete partial order and $f : P \rightarrow P$ is a monotone function (i.e. $\forall x,y \in P$, $x \leq y \Rightarrow f(x) \leq f(y)$), then $f$ has a least fixed-point, and its value is $\textnormal{lfp}(f) = \Sup_{n \in \NN}(f^n(\bot))$
-\end{theorem} \todo{Find a reference to the proof}
-\todo{Monotone or Scott-Continuous... ? If Scott-Continuous, then I should change all proofs a little, but it should not be a problem)}
-\subsection{Weakest precondition calculus in pGCL}
-\label{subsec:predicates_cpo}
-
-With the notations of Section \ref{sec:state}, let $\mathcal{P}$ be the set of predicates, and consider the relation $\leq_{\mathcal{P}}$ such that $f \leq_{\mathcal{P}} g$ iff $\forall \sigma \in \Sigma$, $f(\sigma) \leq g(\sigma)$. The order $\leq_{\mathcal{P}}$ is called the \emph{pointwise order}, as the value of $f$ must be inferior to the value of $g$ in each point $\sigma$.\bigskip
-
-We immediately get the following theorem:
-\begin{theorem}
-$(\mathcal{P},\leq_{\mathcal{P}})$ is a partial order.
-\end{theorem}
-
-We will prove that it is even a complete partial order:
-\begin{theorem}
-$(\mathcal{P},\leq_{\mathcal{P}})$ is a complete partial order
-\end{theorem}
-\begin{proof}
-\begin{itemize}
-\item One can easily verify that $\bot$ is the constant function $\sigma \rightarrow 0$
-\item Let $S = \{f_1, f_2, \dots \}$ be a subset of $P$ with $f_1 \leq_{\mathcal{P}} f_2 \leq_{\mathcal{P}} \dots$. Then, we define the function $f : \sigma \rightarrow \Sup_{n \in \NN^*}(f_n(\sigma))$. \newline
-For each $\sigma$, $f(\sigma)$ is correctly defined: as the set $\{f_n(\sigma) \,|\, n \in \NN^*\}$ is a  subset of $[0,1]$, it has a least upper bound in $[0,1]$. Thus, $f \in \mathcal{P}$
-\begin{itemize}
-\item Let $n \in \NN^*$. Then, by construction, for each $\sigma \in \Sigma$, $f_n(\sigma) \leq \Sup_{n \in \NN^*}(f_n(\sigma)) = f(\sigma)$. And therefore, $f_n \leq_{\mathcal{P}} f$. As this holds for any $n$, we get that $f$ is an upper bound of $S$
-\item Let $g$ be another upper bound of $S$: then, $\forall n \in \NN^*$, $\forall \sigma \in \Sigma$, $f_n(\sigma) \leq g(\sigma)$. Then, $\forall \sigma \in \Sigma$, $f(\sigma) = \Sup_{n \in \NN^*}(f_n(\sigma)) \leq g(\sigma)$. Hence, $f \leq g$. Therefore, $f$ is the least upper bound of $S$
-\end{itemize}
-\end{itemize}
-\end{proof}
- 
- Note that, with an analogue proof, if we denote by $\mathcal{F}$ the set of functions $\{f \,|\, f : \Sigma \rightarrow \RRposi\}$ (where $\RRposi = [0;+\infty]$ with $+\infty$ included), and by $\leq_{\mathcal{F}}$ the canonical pointwise order over $\mathcal{F}$, we can prove that $(\mathcal{F},\leq_{\mathcal{F}})$ is a complete partial order. The inclusion of $+\infty$ in the set of values taken by the function is necessary, otherwise the proof does not work, we can find chains for which the $\Sup$ does not exist.
- 
-\todo{Prove that the function constructed at then end of the Table \ref{table:rules_wp_pgcl} is indeed monotone (or Scott-Continuous ?). To that extent, prove inductively that $wp[P]$ is also monotone (or Scot-contiuous ?)}
-
-\subsection{Application of the semantics McIver and Morgan to $P_0$}
-\label{subsec:wp_p0}
+We can now apply these rules with the program $P_0$ given in Section \ref{sec:intro}.
 Recall that $P_0$ is the program $\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}$. Recall that we denoted by $P_2$ the left member $\{x := 2\} \square \{x := 5\}$. Let $\varphi$ be any postcondition.\bigskip
 
-Looking at the rules in Table \ref{table:rules_wp_pgcl}, one notices that, to compute $wp[P](\varphi)$, one first has to compute $wp[P_2](\varphi)$ and $wp[x := 7](\varphi)$, and to compute the former, we need to compute $wp[x := 2](\varphi)$ and $wp[x := 5](\varphi)$.\bigskip
+Looking at the rules in Table \ref{table:rules_wp_pgcl}, one notices that, to compute $wp[P_0](\varphi)$, one first has to compute $wp[P_2](\varphi)$ and $wp[x := 7](\varphi)$, and to compute the former, we need to compute $wp[x := 2](\varphi)$ and $wp[x := 5](\varphi)$.\bigskip
 
 Applying the assignment rule, we get that:
 $$wp[x := 2](\varphi) = \lambda\sigma.\varphi(\sigma[x/2])$$
@@ -582,11 +247,258 @@ wp[P_0](\varphi) &= wp[\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}](\va
 
 Now, we can try replacing $\varphi$ by interesting postconditions.
 \begin{itemize}
-\item If $\varphi = [x = 7]$, then for each $\sigma$, we get $[x = 7](\sigma[x/2]) = 0$, $[x = 7](\sigma[x/5]) = 0$ and $[x = 7](\sigma[x/7]) = 1$, and therefore, $wp[P_0]([x = 7]) = \lambda\sigma. (1-p)$
-\item If $\varphi = [x = 2]$, then for each $\sigma$, we get $[x = 2](\sigma[x/2]) = 1$, $[x = 2](\sigma[x/5]) = 0$ and $[x = 2](\sigma[x/7]) = 0$, and therefore, $wp[P_0]([x = 2]) = \lambda\sigma. 0$ (and symmetrically, $wp[P_0]([x = 5]) = \lambda\sigma. 0$)
-\item If $\varphi = [x = 2 \textnormal{ OR } x = 5]$, we get $[x = 2 \textnormal{ OR } x = 5](\sigma[x/2]) = 1$, $[x = 2 \textnormal{ OR } x = 5](\sigma[x/5]) = 1$ and $[x = 2 \textnormal{ OR } x = 5](\sigma[x/7]) = 0$, and therefore, $wp[P_0]([x = 2 \textnormal{ OR } x = 5]) = \lambda\sigma. p$
+\item If $\varphi = [x = 7]$, then for each $\sigma$, we get $[x = 7](\sigma[x/2]) = 0$, $[x = 7](\sigma[x/5]) = 0$ and $[x = 7](\sigma[x/7]) = 1$, and therefore, \fbox{$wp[P_0]([x = 7]) = \lambda\sigma. (1-p)$}
+\item If $\varphi = [x = 2]$, then for each $\sigma$, we get $[x = 2](\sigma[x/2]) = 1$, $[x = 2](\sigma[x/5]) = 0$ and $[x = 2](\sigma[x/7]) = 0$, and therefore, \fbox{$wp[P_0]([x = 2]) = \lambda\sigma. 0$} (and symmetrically, \fbox{$wp[P_0]([x = 5]) = \lambda\sigma. 0$})
+\item If $\varphi = [x = 2 \textnormal{ OR } x = 5]$, we get $[x = 2 \textnormal{ OR } x = 5](\sigma[x/2]) = 1$, $[x = 2 \textnormal{ OR } x = 5](\sigma[x/5]) = 1$ and $[x = 2 \textnormal{ OR } x = 5](\sigma[x/7]) = 0$, and therefore, \fbox{$wp[P_0]([x = 2 \textnormal{ OR } x = 5]) = \lambda\sigma. p$}
 \end{itemize}
 These are precisely the results stated in Section \ref{sec:intro}.
+\end{example}
+
+	One can also apply these rules to the simpler program $P_1$ and get the results presented in Section \ref{sec:intro}. The calculation is done in Appendix \ref{subsec:wp_p0}.
+	
+	\subsection{Anticipating values, link with random variables}
+    \label{subsec:anticipation}
+    
+	In practice, the weakest precondition calculus can be used to anticipate the value of certain functions. Recall that with the simple program $P_1$ given in Section \ref{sec:intro}, we proved that $wp[P_1]([x \geq 5]) = [y \leq -4]$. As $P_1$ is deterministic, we get that, if $\sigma$ satisfies $[y \leq -4]$, then the state obtained after executing $P_1$ in $\sigma$ satisfies $[x \geq 5]$; and if $\sigma$ does not satisfy $[y \leq -4]$, then the state obtained after executing $P$ in $\sigma$ does not satisfy $[x \geq 5]$. One can say that the function $[y \leq -4]$ anticipates the value of $[x \geq 5]$ after the execution of $P_1$.
+	
+It is in fact possible, in the deterministic case, to anticipate values of other functions, such as the function associating to $\sigma$ the value of $x^2$ in $\sigma$, or the value of $|\textnormal{sin}(y)|$ in $\sigma$.\cite{Winskel93} However, due to certain constraints in order to ensure the existence of least fixed-points and make the computation possible, one must restrict ourselves to functions from $\Sigma$ to $\RRposi$ (where $\RRposi = [0,+\infty]$). Let $\mathcal{F} = \{f \,|\, f : \Sigma \rightarrow \RRposi \}$. \footnote{With this restriction, a chain-complete partial order can be defined on $\mathcal{F}$ (the inclusion of $\infty$ in the set of possible values is necessary for this definition) and Kleene's fixed point theorem can be applied. See Appendices \ref{subsec:kleene} and \ref{subsec:predicates_cpo}. Note that $\infty$ is not only included to get a chain-complete partial order, it can be used as a possible value. One interesting function of $\mathcal{F}$, for example, is the running time of a program, possibly infinite, as in \cite{Kaminski16}} That restriction is not a problem in practice, as one can always decompose an arbitrary function as two functions, namely, its absolute value and its sign (and carefully redefine all operations between functions, such as $+$, $\times$, etc.).
+
+Therefore, it is possible to extend the previous predicate transformer semantics in an "anticipated-value" semantics for deterministic programs, by viewing programs as function transformers $\mathcal{F} \rightarrow \mathcal{F}$.
+The anticipation of values can be extended to nondeterministic programs (by considering that, in the nondeterministic choice, the anticipated value is the least one), and to probabilistic nondeterministic programs, by taking the weighted average between the two possible values. The rules of computation are exactly the same as in Table \ref{table:rules_wp_pgcl}. But in this case, they are applied to a function $f \in \mathcal{F}$, and the result is another function $wp[S](f) \in \mathcal{F}$. (Note that predicates are also elements of $\mathcal{F}$. Hence, the previous computations still work in this context.)
+
+\begin{notation} In the following, we will denote by $x_\sigma$ the value of the program variable $x$ in $\sigma$, and we introduce the function $\underline{x} : \sigma \rightarrow x_\sigma$. (This is a simplified notation. In the practice, we should consider one function giving the absolute value of $x_\sigma$ and another giving its sign.) Hence, $\underline{x} \in \mathcal{F}$ is a function giving the value of $x$ in each state.
+\end{notation}
+
+\begin{example} Consider the program $P_1$ from Section \ref{sec:intro}, and the function $\underline{x}^2 \in \mathcal{F}$. Its value after the execution of $P_1$ can be computed with:
+\begin{align*}
+& \textnormal{ }wp[x := - y ; x := x+1](\underline{x}^2) = wp[x := - y ](wp[x := x+1](\underline{x}^2)) \\
+ =& \textnormal{ }wp[x := - y ]((\underline{x}+1)^2) = (1-\underline{y})^2  \\
+\end{align*}
+For example, if $(1-\underline{y})^2(\sigma) = 4$, then $\sigma$ is a state where $(1-y_\sigma)^2 = 4$, for instance where $y_\sigma = 3$. Then by executing $P_1$ in $\sigma$, $x$ is set to $-3$, and then to $-2$. In the final state $\sigma'$, we have $x_{\sigma'}^2 = 4$. Therefore, $(1-\underline{y})^2$ anticipates the value that $\underline{x}^2$ takes after the execution of the program.
+\end{example}
+
+\begin{example} Consider the program $P_0$ from Section \ref{sec:intro}, we can anticipate the value of the variable $x$ by computing the anticipated value of the function $\underline{x}$ (we should normally anticipate the value of $\underline{|x|}$, but we easily see that they are the same in this example):
+\begin{align*}
+wp[P_0](\underline{x}) &= wp[ \{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \} ](\underline{x}) \\
+&= p\cdot wp[ \{x := 2\} \square \{x := 5\} ](x) + (1-p)\cdot wp[x := 7](\underline{x}) \\
+&= p\cdot\Min(wp[x := 2](\underline{x}),wp[x := 5](\underline{x})) + (1-p)\cdot wp[x := 7](\underline{x}) \\
+&= \lambda\sigma. p\cdot\Min(wp[x := 2](\underline{x})(\sigma),wp[x := 5](\underline{x})(\sigma))\\ & + (1-p)\cdot wp[x := 7](\underline{x})(\sigma) \\
+&= \lambda\sigma. p\cdot\Min(\underline{x}(\sigma[x/2]),\underline{x}(\sigma[x/5])) + (1-p)\cdot \underline{x}(\sigma[x/7]) \\
+&= \lambda\sigma. p\cdot\Min(2,5) + (1-p)\cdot 7 \\
+&= \lambda\sigma. 2p+7(1-p)
+\end{align*}
+\end{example}
+We leave the result in this form to underline interesting remarks.
+
+\begin{remark}
+For each $\sigma$, $wp[P_0](\underline{x})(\sigma)$, which is the anticipated value of $x$ after the execution of $P_0$ in $\sigma$, has the form of the expected value $E(X)$ of a positive random variable $X$ taking the value $2$ with probability $p$, and the value $7$ with probability $1-p$.
+\end{remark}
+
+\begin{remark}
+The previous remark can be generalized this way:
+Let $S$ be a probabilistic program (without nondeterminism), and let $f \in \mathcal{F}$ be a function. For each initial state $\sigma$, the execution of $S$ in $\sigma$ can be informally divided as several "branches", called execution schemes $\omega$ (at each choice, the current branch is divided into two branches).\newline
+We consider an execution scheme to be a full execution, i.e. at the end of an $\omega$, $S$ terminated, or is looping infinitely. Let $\Omega_\sigma$ be the set of execution schemes obtained when executing $S$ in $\sigma$. A probability can be assigned to each $\omega \in \Omega_\sigma$. We can therefore see the value of $f$ after the execution of $S$ in $\sigma$ as a positive random variable $X_\sigma : \Omega_\sigma \rightarrow \RRposi$.\newline
+Thus, \fbox{$wp[S](f) = \lambda\sigma.E(X_\sigma)$.}
+This result can be more clearly observed in Example \ref{ex:diff_rv} in Appendix \ref{subsec:ex_ant}. A proof can be deduced from the rules in Table \ref{table:rules_wp_pgcl}, notably from the probabilistic choice rule.
+\end{remark}
+
+\begin{remark}
+The previous remark can be extended to probabilistic nondeterministic programs by applying rules in Table \ref{table:rules_wp_pgcl} and by considering the nondeterministic choice as the demonic choice (which is how we were able to compute $wp[P_0](\underline{x})$). Note however that the $\Omega_\sigma$ that we obtain for each $\sigma$ depends on the postcondition we are computing (as shown in Example \ref{ex:diff_ex_sch} in Appendix \ref{subsec:ex_ant}), because the demonism in nondeterministic choice will restrict each of these choices to one outcome, depending on the postcondition.
+\end{remark}
+\begin{remark}
+The result of the computation of $wp[P_0](\underline{x})$ still does not take into account the possibility that $x$ can take the value $5$.
+Dually, if the nondeterministic choice was to be considered as angelic choice, we would get that $wp[P_0](\underline{x}) = 5p+7(1-p)$ and the value $2$ would be missing.
+\end{remark}
+
+These results are therefore counterintuitive. At this point, we defined our own semantics by considering \emph{fuzzy random variables}, instead of random variables.
+	
+
+\section{A New Semantics Based on Possibilities}
+\label{sec:contribution}
+
+In this section, we consider programs over the pGCL language presented in Section \ref{sec:state}. As we stated before, previous existing semantics give nonsatisfying results, both when computing weakest preconditions of predicates in probabilistic nondeterministic programs and when anticipating values of functions in probabilistic nondeterministic programs. Our goal is to define a new semantics, which should be based on possibility theory, and represents each possible outcome more clearly.  Recall from Section \ref{sec:state} that the weakest-precondition calculus can be used in order to anticipate values of functions of $\mathcal{F}$ (i.e. functions from $\Sigma$ to $\RRposi$), and that the corresponding computation in fact gave, for each state $\sigma$, the expected value of a random variable (i.e. the value of the function we are anticipating, after the execution of the program in $\sigma$). Our main idea here is to replace functions from $\Sigma$ to $\RRposi$ by functions from $\Sigma$ to $\mathcal{P}(\RRposi)$, and to identify the anticipation of their values as the expected value of a \textit{Fuzzy random variable} (introduced in \cite{PuriRal86}, and simplified in \cite{Shapiro09}).
+
+\begin{remark}
+In the following, we will consider $\infty$ as a positive value, and will write "positive values" for "finite positive values or $\infty$".
+\end{remark}
+
+\subsection{Fuzzy random variables}
+We adapted the following definition from \cite{PuriRal86}.
+
+\begin{definition}{\textnormal{(Fuzzy Random Variable)\newline}}
+ A Fuzzy Random Variable (short: FRV) is a mapping $X$ from the underlying set $\Omega$ of a probability space $(\Omega,\mathcal{A},Pr)$ to the powerset of extended positive reals $P(\RRposi)\textbackslash\{\emptyset\}$. This means that, if $X$ is an FRV, then for all $\omega \in \Omega$, $X(\omega)$ is a non-empty subset of $\RRposi$. In fact, it is a set of possible values for $X$ in the event $\omega$.
+\end{definition}
+
+In \cite{PuriRal86}, there exists a definition of the expected value $E(X)$ of an arbitrary fuzzy random variable $X$ over an arbitrary probabilistic space. However, in our context, it suffices to consider $\Omega$ as a countable space $\{\omega_1, \omega_2, \dots \}$ (recall that our events are execution schemes) and fuzzy random variables are taking as values only sets of positive values (as we previously defined them). Then, by using the definition of expected value in \cite{PuriRal86} and applying our simplifications, we come to the following definition of the expected value, which is sufficient in our context:
+
+\begin{definition}
+If $X$ is a fuzzy random variable (from $\Omega$ to $P(\RRposi)$), then we can define the expected value $E(X)$ as follows:
+$$E(X) = \left\{ \sum_{n = 1}^{+\infty} t_nPr(\omega_n) \,|\, \forall n \geq 1, t_n \in X(\omega_n) \right\} \subset \RRposi$$
+\end{definition}
+One can interpret this definition as follows: if $X$ is a positive fuzzy random variable (i.e. a random variable associating to each event a set of positive values), then $E(X)$ is the set obtained by computing all possible (even infinite) averages (by picking one value in each $X(\omega_n)$).
+
+\subsection{Contribution: anticipating values of set-valued functions, link with fuzzy random variables}
+Let $\mathcal{F}' = \{f \,|\, f : \sigma \rightarrow P(\RRposi)\textbackslash\{\emptyset\} \}$ be a new set of functions. We want to anticipate the values of these functions after the execution of a program. What it intuitively means is that $f$ maps each $\sigma$ to a non-empty set of "possible values". 
+\begin{notation}
+In the following, we redefine the application $\underline{x}$ by : $\underline{x} = \lambda\sigma. \{x_\sigma\}$, meaning that $\underline{x}$ associates to $\sigma$ a set containing the only possible value for $x$ in this state (which is directly accessible, since each state is characterized uniquely by the values of each variable).
+\end{notation}
+
+Our suggestion is to replace the $wp$ operator by the following operator:
+\begin{definition}
+ 	If $S$ is a pGCL program, then our \emph{expected possible value} semantics of $S$ is given by $ev[S]$ (defined by the rules in Table \ref{table:rules_ev}).\newline
+	$ev[S]$ is a function transformer, i.e. if $f \in \mathcal{F}'$, then $ev[S](f) \in \mathcal{F}'$.
+\end{definition}
+
+However, we have not proven yet that $ev$ is well defined in the presence of loops (it is the only problematic point, since it requires the computation of least-fixed points). This requires the existence of a chain-complete partial order over $\mathcal{F}'$, and that for all programs $S$, $ev[S]$ is monotonic (more details in Appendix \ref{subsec:kleene}). However, in programs without loops, we do not need such a structure, and we can directly use $ev$, as we do in this section.\bigskip
+
+Recall that we mentioned in Subsection \ref{subsec:anticipation} that, if $f \in \mathcal{F}$ and if $S$ is a pGCL program, then the value of $f$ after the execution of $S$ in a state $\sigma$ is given by a random variable $X_\sigma$, and $wp[S](f)$ in fact gave $E(X_\sigma)$ for each $\sigma$.\newline
+Symmetrically, here, if $f \in \mathcal{F}'$, then the value of $f$ (which is a set) after the execution of $S$ in a state $\sigma$ is given by a fuzzy random variable $X_\sigma$, and $ev[S](f)$ in fact gives $E(X_\sigma)$ (which is a set) for each $\sigma$. This illustrates that $ev[S]$ transforms a function of $\mathcal{F}'$ in another function of $\mathcal{F}'$.\newline
+
+
+\begin{table*}[!t]
+\begin{center}
+\begin{tabular}{|p{3cm}|p{9cm}|}
+ \hline
+ \thead{$\bm{S}$} & \thead{$\bm{ev[S](f)}$} \\
+ \hline
+ \thead{\texttt{skip}} & \thead{$f$} \\
+ \hline
+ \thead{$x := A$} & \thead{$\lambda\sigma.f(\sigma[x/A])$} \\
+ \hline
+ \thead{$S_1 ; S_2$} & \thead{$ev[S_1](ev[S_2](f))$} \\
+ \hline
+ \thead{$S_1 [p] S_2$} & \thead{$\lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \}$} \\
+ \hline
+ \thead{$\{S_1\} \square \{S_2\}$} & \thead{$\lambda\sigma. ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma)$} \\
+ \hline
+ \thead{$\texttt{if } (b) \texttt{ then } \{ S_1 \}$ \\ $\texttt{ else } \{ S_2 \}$} & \thead{$\lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$ \\$t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \}$} \\
+ \hline
+ \thead{$\texttt{while }(b) \texttt{ do }\{S\}$} & \thead{lfp ($\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$\\$t_1 \in ev[S](X)(\sigma), t_2 \in f(\sigma) \}$))} \\
+ \hline
+\end{tabular}
+\end{center}
+\caption{Rules for defining the transformer $ev$}
+\label{table:rules_ev}
+\end{table*}
+
+Consider the running example $P_0$: $\{ \{x := 2\} \square \{x := 5\} \} [p] \{ x := 7 \}$. The value of $x$ after the execution of $P_0$ in a given initial state is given by a fuzzy random variable. We want to compute its expected value. Thus, we have to determine $ev[P_0](\underline{x})$. It is a function of $\sigma$, but the form of $P_0$ gives the intuition that it will be a constant function, not depending on $\sigma$.\newline
+With the rules presented in Table \ref{table:rules_ev}, we can see that this requires first to compute the functions $ev[\{x := 2\} \square \{x := 5\}](\underline{x})$ and $ev[x := 7](\underline{x})$; besides, the former requires to compute $ev[x := 2](\underline{x})$, $ev[x := 5](\underline{x})$. We get that:
+$$ev[x := 2](\underline{x}) = \lambda\sigma.\underline{x}(\sigma[x/2]) = \lambda\sigma.\{x_{\sigma[x/2]}\} = \lambda\sigma.\{2\}$$ 
+Indeed, the value of $x$ in $\sigma[x/2]$ is necessarily $2$. Recall that $\sigma[x/2]$ is the state obtained after setting $x$ to $2$ in the state $\sigma$. This means that the expected value of $x$ after executing $x := 2$ in any state $\sigma$ can only be $2$. By the same computation, we get $ev[x := 5](\underline{x}) = \lambda\sigma.\{5\}$ and $ev[x := 7](\underline{x}) = \lambda\sigma.\{7\}$.\newline
+Now, we can compute that:
+\begin{align*}
+ev[\{x := 2\} \square \{x := 5\}](\underline{x}) &= \lambda\sigma. ev[x := 2](\underline{x})(\sigma) \cup ev[x := 5](\underline{x})(\sigma) \\
+&= \lambda\sigma. \{2\} \cup \{5\} = \lambda\sigma.\{2,5\} 
+\end{align*}
+This means that the possible expected values of $x$ after executing $\{x := 2\} \square \{x := 5\}$ in any state $\sigma$ are $2$ and $5$. Finally, 
+\begin{align*}
+ev[P_0](\underline{x}) &= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, \\
+& t_1 \in ev[\{x := 2\} \square \{x := 5\}](\underline{x})(\sigma), t_2 \in ev[x := 7](\underline{x})(\sigma) \} \\
+&= \lambda\sigma.\{t_1 p+t_2(1-p) \,|\, t_1 \in \{2,5\}, t_2 \in \{7\} \} \\
+&= \lambda\sigma. \{2p+7(1-p),5p+7(1-p) \} 
+\end{align*}
+
+Contrary to what was observed with the semantics of McIver and Morgan, no information is lost here.
+The result we just showed means that, when we execute $P_0$ in a state $\sigma$, there are two possible values for the program variable $x$ after the execution. The first one results from the case where $x := 2$ is executed in the nondeterministic choice. In this case, anticipating the value of $x$ is the same as computing the expected value of a classical random variable as we did in Subsection \ref{subsec:anticipation}. The second one is obtained symmetrically in the case where $x := 5$ is executed.\newline
+The link with fuzzy random variables is clearer, as the previous results shows that, for each $\sigma$, $ev[P_0](\underline{x})(\sigma)$ is the expected value of a fuzzy random variable taking the value $\{2,5\}$ with probability $p$ (corresponding to the first execution scheme, where the left branch of the probabilistic choice is executed. In this case, $x$ has a probability $p$ of being set to $2$ or $5$. Both choices are \underline{possible}, and that is why both values belong to the set), and the value $\{7\}$ with probability $1-p$.
+\bigskip
+
+Finally, we can explain how our semantics is related to possibility theory. Recall that McIver and Morgan extended $wp$ to probabilistic nondeterministic programs such that, if $\varphi$ is a predicate, then $wp[P](\varphi)(\sigma)$ is the probability that $P$, when executed in $\sigma$, terminates in a state where $\varphi$ is satisfied.\newline
+If we denote by $\mathds{1}_U$ the indicator function of a set $U$, and if we take $f \in \mathcal{F}'$, then $\mathds{1}_{ev[P](f)(\sigma)}(a)$ is the possibility that $a$ is an expected value of $f$ after the execution of $P$ in the state $\sigma$. And we can extend this result: if $V \subset \RRposi$, then $\mathds{1}_{ev[P](f)(\sigma)}(V) = \Sup_{a \in V}(\mathds{1}_{ev[P](f)(\sigma)}(a))$ is the possibility that at least one value in $V$ is an expected value of $f$ after the execution of $P$ in $\sigma$.
+
+\section{Conclusion}
+\label{sec:conclusion}
+In this report, we presented the predicate transformer semantics of pGCL programs, detailed by McIver and Morgan in \cite{McIver05}. We explained how the weakest-precondition calculus could be used in order to anticipate the values of particular functions, and explained the link with random variables, i.e. the value of a function after the execution of a program in a given initial state is a random variable, and the weakest precondition calculus gives access to its expected value. We underlined that nevertheless, the results obtained with the semantics of McIver and Morgan are not satisfying with the demonic choice, and neither with the angelic choice, as both conventions omitted essential information. Finally, we presented the notion of fuzzy random variables, and our own semantics, where we anticipate values of functions taking not positive real numbers as values, but sets of positive real numbers. We explained the link between our semantics and the expected value of fuzzy random variables.\newline
+However, our semantics is defined by an operator which is not yet proven to be well-defined for programs containing loops.
+This requires the definition of a chain-complete partial order over $\mathcal{F}'$ which makes the function transformer $ev[S]$ monotonic for each program $S$ (see Appendix \ref{subsec:kleene} for more details). Up to now, our attempts (detailed in Appendix \ref{subsec:attempts}) to build such an order failed. There still exists one solution, consisting in restricting the possible values of the functions to downward closed sets, and build a pointwise order based on inclusion, but this solution builds in practice a new set of functions isomorphic to $\mathcal{F}$, and the resulting semantics suffers from the same loss of information as in the semantics of McIver and Morgan.\newline
+Therefore, the most important part of the future work will consist in finding a chain-complete partial order over $\mathcal{F}'$, verifying the above-mentioned properties, in order for our semantics to be well-defined.
+
+
+\bibliography{ref1}{}
+\bibliographystyle{plain}
+
+\newpage
+\section{Appendix}
+\label{sec:appendix}
+
+\subsection{Kleene's Fixed point theorem}
+\label{subsec:kleene}
+
+The following definitions can be found in \cite{Gierz80}.
+
+Let $P$ be a set with a partial order $\leq$.
+\begin{definition}{\textnormal{(Chain-complete partial order)}}
+$(P,\leq)$ is a \emph{chain-complete partial order} if the following conditions are satisfied:
+\begin{itemize}
+\item $\leq$ has a minimal element, denoted $\bot$ (such that $\forall x \in P$, $\bot \leq x$)
+\item for each subset $S = \{x_1, x_2, \dots \} \subset P$ where $x_1 \leq fx2 \leq \dots $, $S$ has a least upper bound $\Sup(S)$ in $P$ (Such a set $S$ is called a \emph{chain})
+\end{itemize}
+\end{definition}
+
+\begin{theorem}{\textnormal{(Kleene's fixed-point theorem)}}
+If $P$ is a chain-complete partial order and $f : P \rightarrow P$ is a monotone function (i.e. $\forall x,y \in P$, $x \leq y \Rightarrow f(x) \leq f(y)$), then $f$ has a least fixed-point, and its value is $\textnormal{lfp}(f) = \Sup_{n \in \NN}(f^n(\bot))$
+\end{theorem} 
+
+In fact, Kleene's Theorem has more general hypotheses (such as $f$ being a mapping from a chain-complete partial order $P$ to a chain-complete partial order $Q$ and being Scott-Continuous). A proof of this more general theorem can be found in \cite{Stoltenberg94}, and clearer explanations can be found in \cite{Moons13}. However, in our case, when $P$ and $Q$ are the same chain-complete partial order, the monotonicity of $f$ is sufficient. A proof of this latter point can be found in \cite{Loeckx87}
+
+
+\subsection{Chain-complete partial order over the set of predicates and set $\mathcal{F}$ of functions in pGCL}
+\label{subsec:predicates_cpo}
+
+With the notations of Section \ref{sec:state}, let $\mathcal{P}$ be the set of predicates, and consider the relation $\leq_{\mathcal{P}}$ such that $f \leq_{\mathcal{P}} g$ iff $\forall \sigma \in \Sigma$, $f(\sigma) \leq g(\sigma)$. The order $\leq_{\mathcal{P}}$ is called the \emph{pointwise order lifted from $\leq$}, as the value of $f$ must be inferior to the value of $g$ in each point $\sigma$.\bigskip
+
+We immediately get the following theorem:
+\begin{theorem}
+$(\mathcal{P},\leq_{\mathcal{P}})$ is a partial order.
+\end{theorem}
+
+We will prove that it is even a chain-complete partial order:
+\begin{theorem}
+$(\mathcal{P},\leq_{\mathcal{P}})$ is a chain-complete partial order
+\end{theorem}
+\begin{proof}
+\begin{itemize}
+\item One can easily verify that $\bot$ is the constant function $\sigma \rightarrow 0$
+\item Let $S = \{f_1, f_2, \dots \}$ be a subset of $P$ with $f_1 \leq_{\mathcal{P}} f_2 \leq_{\mathcal{P}} \dots$. Then, we define the function $f : \sigma \rightarrow \Sup_{n \in \NN^*}(f_n(\sigma))$. \newline
+For each $\sigma$, $f(\sigma)$ is correctly defined: as the set $\{f_n(\sigma) \,|\, n \in \NN^*\}$ is a  subset of $[0,1]$, it has a least upper bound in $[0,1]$. Thus, $f \in \mathcal{P}$
+\begin{itemize}
+\item Let $n \in \NN^*$. Then, by construction, for each $\sigma \in \Sigma$, $f_n(\sigma) \leq \Sup_{n \in \NN^*}(f_n(\sigma)) = f(\sigma)$. And therefore, $f_n \leq_{\mathcal{P}} f$. As this holds for any $n$, we get that $f$ is an upper bound of $S$
+\item Let $g$ be another upper bound of $S$: then, $\forall n \in \NN^*$, $\forall \sigma \in \Sigma$, $f_n(\sigma) \leq g(\sigma)$. Then, $\forall \sigma \in \Sigma$, $f(\sigma) = \Sup_{n \in \NN^*}(f_n(\sigma)) \leq g(\sigma)$. Hence, $f \leq g$. Therefore, $f$ is the least upper bound of $S$
+\end{itemize}
+\end{itemize}
+\end{proof}
+ 
+ \begin{remark}
+ With an analogue proof, if we denote by $\mathcal{F}$ the set of functions $\{f \,|\, f : \Sigma \rightarrow \RRposi\}$ (where $\RRposi = [0;+\infty]$ with $+\infty$ included), and by $\leq_{\mathcal{F}}$ the canonical pointwise order over $\mathcal{F}$, we can prove that $(\mathcal{F},\leq_{\mathcal{F}})$ is a chain-complete partial order. The inclusion of $+\infty$ in the set of values taken by the function is necessary, otherwise the proof does not work, we can find chains for which the $\Sup$ does not exist.
+ \end{remark}\bigskip
+ 
+In order for the weakest-precondition semantics to make sense, it is sufficient that the operator $wp$ is monotone and preserves Sups. A proof is available in \cite{BackWright97} for $wp$ over GCL programs, and can be extended to pGCL.\bigskip
+
+Knowing that $\mathcal{P}$ is a chain-complete partial order and that, for all $S$, the operator $wp[S]$ is monotone, then we can prove that the function whose least fixed point we want to compute (when $S$ includes a loop) is monotone, and as it is a function over $\mathcal{P}$, then the least fixed-point exists. Therefore, the computation of $wp[S]$ with the rules presented in Table \ref{table:rules_wp_pgcl} is always possible.\newline
+With the previous remark, this result can be extended to $\mathcal{F}$.
+
+\subsection{Application of the semantics McIver and Morgan to $P_1$}
+\label{subsec:wp_p0}
+
+Applying these rules to the example program $P_1$ from Section \ref{sec:intro} with the postcondition $[x \geq 5]$ (binary predicate evaluating to $1$ in state $\sigma$ if and only if $x \geq 5$ holds in $\sigma)$, we get:
+\begin{align*}
+ \textnormal{ }wp[x := - y ; x := x+1]([x \geq 5]) = wp[x := - y ](wp[x := x+1]([x \geq 5]))
+\end{align*}
+The assignment rules determines that $wp[x := x+1]([x \geq 5]) = \lambda\sigma. [x \geq 5](\sigma[x/x+1])$.
+It turns out that:
+\begin{align*}
+wp[x := x+1]([x \geq 5]) = [x+1 \geq 5] = [x \geq 4]
+\end{align*}
+\begin{proof}
+Recall that $[x \geq 5](\sigma) = 1$ if $x \geq 5$ in $\sigma$ and $0$ else. Therefore $[x \geq 5](\sigma[x/x+1]) = 1$ if $x \geq 5$ in $\sigma[x/x+1]$ and $0$ else. This is equivalent to: $[x \geq 5](\sigma) = 1$ if $x+1 \geq 5$ in $\sigma$ and $0$ else. Therefore, $[x \geq 5](\sigma[x/x+1]) = [x+1 \geq 5](\sigma)$, and $wp[x := x+1]([x \geq 5]) = [x+1 \geq 5] = [x \geq 4]$.
+\end{proof}
+ We resume the computation:
+\begin{align*}
+& \textnormal{ }wp[x := - y ; x := x+1]([x \geq 5]) = wp[x := - y ](wp[x := x+1]([x \geq 5])) \\
+ =& \textnormal{ }wp[x := - y ]([x+1 \geq 5]) = \textnormal{ }wp[x := - y ]([x \geq 4]) = [-y \geq 4] = [y \leq -4] \\
+\end{align*}
+
+
 
 \subsection{Example of anticipation of values in Section \ref{subsec:anticipation}}
 \label{subsec:ex_ant}
@@ -631,159 +543,451 @@ Consider the program $P_0$ defined in Section $1$.
 \end{itemize}
 \end{example}
 
-\subsection{Anticipation of values of set-valued functions in Section \ref{sec:contribution}}
-Recall that we defined $\mathcal{F}' = \{f : \,|\, f : \Sigma \rightarrow \mathcal{P}(\RRposi) \}$, and we defined the semantics of the pGCL program $P$ as a transformer $ev[P]$, transforming $f \in \mathcal{F'}$ in $ev[P](f) \in \mathcal{F}'$. But for the definition of $ev$ to make sense (i.e. for the least fixed-point in the loop rule to exist, by applying Kleene's Theorem), we want to prove two points:
+\subsection{Attempts of defining a complete partial order over $\mathcal{F}'$ in Section \ref{sec:contribution}}
+\label{subsec:attempts}
+Recall that we defined $\mathcal{F}' = \{f : \,|\, f : \Sigma \rightarrow \mathcal{P}(\RRposi)\textbackslash\{\emptyset\} \}$, and we defined the semantics of the pGCL program $P$ as a transformer $ev[P]$, transforming $f \in \mathcal{F'}$ in $ev[P](f) \in \mathcal{F}'$. But for the definition of $ev$ to make sense (i.e. for the least fixed-point in the loop rule to exist, by applying Kleene's Theorem), we want to prove two points:
 \begin{enumerate}
-\item $\mathcal{F}'$ is a complete partial order.
+\item $\mathcal{F}'$ is a chain-complete partial order.
 \item For all programs $P$, the function transformer $ev[P] : \mathcal{F}' \rightarrow \mathcal{F}'$ is monotone (this is sufficient to make the function whose least fixed-point is calculated monotone)
 \end{enumerate}
 \bigskip
 
-We define the lower closure of a subset of $\RRposi$.
-\begin{definition}
-If $U$ is a subset of $\RRposi$, then the lower closure $\downarrow U$ of $U$ is defined as:
+The monotonicity in the second point and the existence of a chain-complete partial order both require the existence of a partial order over $\mathcal{F'}$. Here are our attempts, and explanations of their failure in satisfying the two properties mentioned above.\bigskip
+
+\subsubsection{First attempt: The pointwise order based on inclusion.}
+
+In this attempt, instead of considering functions mapping elements of $\Sigma$ to non-empty subsets of $\RRposi$, we considered functions mapping elements of $\Sigma$ to arbitrary (and then possibly empty) subsets of $\RRposi$. We therefore had another set of functions $\mathcal{F}'' = \{f \,|\, f : \Sigma \rightarrow P(\RRposi)\}$.\bigskip
+
+The easiest way to build a partial order over $\mathcal{F}''$ is to build a partial order over $P(\RRposi)$ and to lift this order into a pointwise order over $P(\RRposi)$. The inclusion $\subset$ is obviously a partial order over $P(\RRposi)$. Therefore, we can consider the following relation:
+
+$$f \leq_1 g \textnormal{ iff } \forall \sigma \in \Sigma, f(\sigma) \subset g(\sigma)$$
+
+One can easily see that this defines a partial order over $\mathcal{F}''$, and one can prove that it defines a complete partial order over $\mathcal{F}''$; we will however not detail this proof, because it is long and because the problem does not reside in this first property.\bigskip
+
+In fact, one can easily see that, for this partial order, the minimal element is $\bot = \lambda\sigma. \emptyset$, since $\emptyset$ is included in each subset of $\RRposi$. However, the rules in Table \ref{table:rules_ev} are not well defined when considering $\bot$ as a postcondition. Nevertheless, they have to be well defined, since the computation of the least fixed-point in the \texttt{while}. The main problem resides in the fact that, when constructing a set containing elements of the form $[\![b : true ]\!](\sigma)t_1 + [\![b :false ]\!](\sigma)t_2$, with $t_1$ and $t_2$ belonging in certain sets, then what happens when the set where we should pick $t_1$ (or symmetrically $t_2$) is empty ?\bigskip
+
+We can decide that, in this case, the set containing all elements of the form $[\![b : true ]\!](\sigma)t_1 + [\![b :false ]\!](\sigma)t_2$ is also empty. But in this case, when computing a least fixed-point by applying Kleene's Theorem, we start with $\bot$, and each time that we apply the function whose least-fixed point we seek to $\bot$, the result is $\bot$. Therefore, each least fixed-point that we compute is $\bot$, which is not what we expect.\bigskip
+
+\subsubsection{Second attempt: no emptyset.}
+We tried to solve the problem by considering $\mathcal{F}'$ as we did in Section \ref{sec:contribution}, i.e. by considering functions mapping states to \underline{non-empty} subsets of $\mathcal{F}'$. In this case, the previous relation $\leq_1$ remains a partial order. \bigskip
+
+However, it does not define a chain-complete partial order anymore, because there is no minimal element. This can be proven by showing that, for each $f \mathcal{F}'$, there exists $g \in \mathcal{F}'$ such that $f \leq_1 g$ does not hold.\bigskip
+
+\begin{proof}
+Let $f \in \mathcal{F}'$. We will build a function $g$ as follows:
+Let $\sigma_0 \in \Sigma$.
+\begin{itemize}
+\item $\forall \sigma' \neq \sigma_0$, $g(\sigma') = f(\sigma')$
+\item If $f(\sigma_0)$ is a singleton $\{x\}$, then $g(\sigma_0) = \{x + 1\}$
+\item If $f(\sigma_0)$ is not a singleton, then we can tell that it contains at least two elements $x$ and $y$, because $f(\sigma_0)$ is non-empty. Then, we can decide for instance that $g(\sigma_0) = f(\sigma_0)\textbackslash\{x\}$.
+\end{itemize}
+In all cases, we get that $\forall \sigma \in \Sigma$, $g(\sigma)$ is not empty, and all its elements are positive real numbers (or the infinity). Therefore, $g \in \mathcal{F}'$. However, by construction, $f \leq_1 g$ does not hold, because there exists one state (namely, $\sigma_0$) for which $f(\sigma_0) \not\subset g(\sigma_0)$.\newline
+Therefore, $f$ cannot be the minimal element for $\leq_1$. As this holds for all $f \in \mathcal{F}'$, there exists no minimal element for $\leq_1$ in $\mathcal{F}'$.
+\end{proof}
+
+\subsubsection{Third attempt: downward closures.} In this case, we consider another relation inspired from the pointwise order, but where the inclusion must hold on downward closures.
+
+\begin{definition}{\textnormal{(Downward closure)\newline}}
+Let $U \subset \RRposi$. Then, the \emph{downward closure} of $U$, denoted by $\downarrow U$, is a subset of $\RRposi$ such that:
 $$x \in \downarrow U \textnormal{ iff } \exists y \in U, x \leq y$$
+In other terms, $\downarrow U$ contains exactly all elements of $U$ and all elements of $\RRposi$ inferior to one element of $U$.
 \end{definition}
-We immediately get the following lemma, which will be used a lot in our proofs:
-\begin{lemma}
-\label{magical_lemma}
 
-\begin{enumerate}
-\item If $U$ is a subset of $\RRposi$, then $U \subset \downarrow U$.
-\item $\downarrow U = \emptyset$ iff $U = \emptyset$ 
-\end{enumerate}
-\end{lemma}
+Consider the following relation:
+$$f \leq_2 g \textnormal{ iff } \forall \sigma \in \Sigma, \downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$$
 
-\begin{theorem} The following order is a partial order over $\mathcal{F}'$:
-$$f \leq_{\mathcal{F}'} g \textnormal{ iff } \forall \sigma \in \Sigma, \downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$$
-\end{theorem}
-\begin{proof} Reflexivity, antisymmetry and transitivity are respectively obtained from the reflexivity, antisymmetry and transitivity of $\subset$ as an order relation over $\RRposi$.
+This relation is supposed to counter the defaut of the previous relation of having no minimal element. In this case, we easily see that the minimal element is $\bot = \lambda\sigma.\{0\}$.
+However, this relation does not even define a partial order over $\mathcal{F}'$, because it is not antisymmetric.\bigskip
+
+This can easily be seen by the fact that $\downarrow\{2,5\} = \downarrow \{5\}$, but $\{2,5\} \neq \{5\}$. However, it is interesting to note that we can build a partial order with this relation over another set of functions.\bigskip
+
+Let $\downarrow P(\RRposi)$ denote $\{\downarrow U \,|\, U \in P(\RRposi)\}$, the set of downward closures of all subsets of $\RRposi$. It is possible to use the previous relation to build a chain-complete partial order over the set of functions $\mathcal{F}_\downarrow = \{f : \,|\, f : \Sigma \rightarrow \downarrow P(\RRposi)\}$. However, this leads to a lack of information, as some possibilities cannot be represented. For example, it would be impossible in this case to obtain the result that we got for $P_0$ in Section \ref{sec:contribution}. This is linked to the fact that $\mathcal{F}_\downarrow$ is isomorphic to the set $\mathcal{F}$ presented in Section \ref{sec:state}, and therefore suffers from the same loss of information.
+
+
+\subsubsection{Fourth attempt: surjective mapping.}
+Another possibility (which seems complex, but is in fact often used to define chain-complete partial orders on other sets) is to consider the following relation over $\mathcal{F}'$ (we keep the property that our functions must not map any state to the empty set):
+
+$$f \leq_3 g \textnormal{ iff } \forall \sigma \in \Sigma, \exists \alpha : g(\sigma) \rightarrow f(\sigma) \textnormal{ surjective, such that } \forall r \in g(\sigma), \alpha(r) \leq r$$
+
+However, this does not even define a partial order. One can prove that this relation is reflexive and transitive. However, it is not antisymmetric:
+
+\begin{proof}
+Let $f,g \in \mathcal{F}'$ such that, for one $\sigma \in \Sigma$, we have:
+\begin{itemize}
+\item $f(\sigma) = \{\dots\frac{1}{6}, \frac{1}{4}, \frac{1}{2}, 1, 2, 3, 4 \dots\}$
+\item $g(\sigma) = \{\dots\frac{1}{7}, \frac{1}{5}, \frac{1}{3}, 1, 2, 3, 4 \dots\}$
+\end{itemize}
+In practice, this is the same as considering two sequences $(f_n)_{n \in \ZZ}$ and $(g_n)_{n \in \ZZ}$ such that:
+\begin{equation}
+\forall n \in \ZZ, f_n=
+\left\lbrace
+\begin{array}{ccc}
+\frac{1}{2|n|}  & \mbox{if} & n \leq -1\\
+n+1 & \mbox{if} & n \geq 0
+\end{array}\right.
+\end{equation}
+\begin{equation}
+\forall n \in \ZZ, g_n=
+\left\lbrace
+\begin{array}{ccc}
+\frac{1}{2|n|+1}  & \mbox{if} & n \leq -1\\
+n+1 & \mbox{if} & n \geq 0
+\end{array}\right.
+\end{equation}
+With these notations, we have $f(\sigma) = \{f_n \,|\, n \in \ZZ\}$ and $g(\sigma) = \{g_n \,|\, n \in \ZZ\}$.
+Now, we shall consider the following mappings:
+\begin{equation}
+\alpha :
+\left\lbrace
+\begin{array}{ccc}
+g(\sigma) & \rightarrow f(\sigma)\\
+g_n & \rightarrow & f_{n-1}
+\end{array}\right.
+\end{equation}
+\begin{equation}
+\beta :
+\left\lbrace
+\begin{array}{ccc}
+f(\sigma) & \rightarrow g(\sigma)\\
+f_n & \rightarrow & g_{n-1}
+\end{array}\right.
+\end{equation}
+We easily see that, by construction, $\alpha$ and $\beta$ are both surjective, and one can verify with the expressions of $f_n$ and $g_n$ that $\forall n \in \ZZ$, $f_{n-1} = \alpha(g_n) \leq g_n$ and $g_{n-1} = \beta(f_n) \leq f_n$. Therefore, $\forall r \in f(\sigma)$, $\beta(r) \leq r$ and $\forall r \in g(\sigma)$, $\alpha(r) \leq r$.\newline
+Hence, $f \leq_3 g$ and $g \leq_3 f$. However, for the $\sigma$ previously defined, we have $f(\sigma) \neq g(\sigma)$, and therefore, $f \neq g$.\newline
+Thus, $\leq_3$ is not a partial order (and as a consequence, it is not possible to use it to build a chain-complete partial order).
 \end{proof}
 
-\begin{theorem}
-$(\mathcal{F}',\leq_{\mathcal{F}'})$ is a complete partial order.
-\end{theorem}
-\begin{proof}
-\begin{itemize}
-\item One easily sees that $\bot : \sigma \rightarrow \emptyset$ is the minimal element
-\item Let $S = \{f_1, f_2, \dots \}$ be a chain of $\mathcal{F}'$. Therefore, we have $f_1 \leq_{\mathcal{F}'} f_2 \leq_{\mathcal{F}'} \dots$.\newline
-We shall consider $f \in \mathcal{F}'$ defined by: $f : \sigma \rightarrow \cup_{n \in \NN^*} f_n(\sigma)$. We will prove that $f$ is the least upper bound of $S$.
-\begin{itemize}
-\item Let $n \in \NN^*$ and $\sigma \in \Sigma$. We have to prove that $\downarrow(f_n(\sigma)) \subset \downarrow (f(\sigma))$. If $f_n(\sigma) = \emptyset$, then we immediately get the result.\newline 
-Otherwise, let $x \in \downarrow(f_n(\sigma))$. Therefore, there exists $y \in f_n(\sigma)$ such that $x \leq y$. We immediately deduce that $y \in f_n(\sigma) \in \cup_{n \in \NN^*} f_n(\sigma) = f(\sigma)$, and as $x \leq y$, then $x \in \downarrow (f(\sigma))$. As this holds for all $n \in \NN^*$ and for all $\sigma \in \Sigma$, we get that:
-$$\forall n \in \NN^*, \forall \sigma \in \Sigma, \downarrow(f_n(\sigma)) \subset \downarrow(f(\sigma))$$
-And therefore, $\forall n \in \NN^*$, $f_n \leq_{\mathcal{F}'} f$. Thus, $f$ is an upper bound for $S$.
-\item Let $g$ be another upper bound of $S$. Therefore, we have:
-$$\forall n \in \NN^*, \forall \sigma \in \Sigma, \downarrow(f_n(\sigma)) \subset \downarrow(g(\sigma))$$
-Let $\sigma \in \Sigma$. We want to prove that $\downarrow (f(\sigma)) \subset \downarrow(g(\sigma))$. If $f(\sigma) = \emptyset$, the result is immediate.\newline
-Otherwise, let $x \in \downarrow(f(\sigma))$. Therefore, there exists $y \in f(\sigma)$ such that $x \leq y$. As $y \in f(\sigma)$, there exists $n \in \NN^*$ such that $y \in f_n(\sigma)$. With the Lemma \ref{magical_lemma}, we get that $y \in \downarrow(f_n(\sigma))$, and then, with the previous hypothesis, $y \in \downarrow(g(\sigma))$. Hence, there exists $z \in g(\sigma)$ with $y \leq z$. Thus, $x \leq z$, and therefore, $x \in \downarrow(g(\sigma))$.\newline
-Therefore, $\forall \sigma \in \Sigma$, $\downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$, and thus, $f \leq_{\mathcal{F}'} g$. Hence, $f$ is the least upper bound of $S$.
-\end{itemize} 
-\end{itemize}
-\end{proof}
 
-We proved the first point: $\mathcal{F}'$ is a complete partial order.\newline
-Now, we want to prove the following theorem.
-
-\begin{theorem}
-For all pGCL programs $P$, $ev[P] : \mathcal{F}' \rightarrow \mathcal{F}'$ is a monotone function
-\end{theorem}
-\begin{proof}
-We will prove it by induction, using the rules in Table \ref{table:rules_ev}.
-\begin{itemize}
-\item Obviously, when $P = \texttt{skip}$, if $f \leq_{\mathcal{F}'} g$, then $ev[skip](f) = f \leq_{\mathcal{F}'} g = ev[skip](g)$\bigskip
-
-\item $P = \{ x := A\}$, if $f \leq_{\mathcal{F}'} g$, then we get that $\forall \sigma \in \Sigma$, $\downarrow(f(\sigma)) \subset \downarrow (g(\sigma))$. Particularly, for all $\sigma' \in \Sigma$ such that there exists $\sigma \in \Sigma$ where $\sigma' = \sigma[x/A]$, we get $\downarrow(f(\sigma')) \subset \downarrow(g(\sigma'))$. Therefore, $ev[x := A](f) = \lambda \sigma. f(\sigma[x/A]) \leq_{\mathcal{F}'} \lambda \sigma. g(\sigma[x/A]) = ev[x := A](g)$
-\bigskip
-
-\item When $P = P_1;P_2$, assume that $ev[P_1]$ and $ev[P_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we get that $ev[P_2](f) \leq_{\mathcal{F}'} ev[P_2](g)$, and then, $ev[P_1](ev[P_2](f)) \leq_{\mathcal{F}'} ev[P_1](ev[P_2](g))$. Finally, we proved that $ev[P_1 ; P_2](f) \leq_{\mathcal{F}'} ev[P_1 ; P_2](g)$
-\bigskip
-
-\item When $P = P_1 \square P_2$, assume that $ev[P_1]$ and $ev[P_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[P](f) = \lambda\sigma. ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma) \leq_{\mathcal{F}'} \lambda\sigma. ev[P_1](g)(\sigma) \cup ev[P_2](g)(\sigma) = ev[P](g)$. \newline
-To that extent, we have to prove that, 
-$$\forall \sigma \in \Sigma, \downarrow(ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma)) \subset \downarrow(ev[P_1](g)(\sigma) \cup ev[P_2](g)(\sigma))$$
-Let $\sigma \in \Sigma$. If $ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma) = \emptyset$, then there is nothing to prove.\bigskip
-
-Otherwise, let $x \in \downarrow(ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma))$. Then, there exists $y \in ev[P_1](f)(\sigma) \cup ev[P_2](f)(\sigma)$ such that $x \leq y$. We assume that $y \in ev[P_1](f)(\sigma)$. Then, with the Lemma \ref{magical_lemma}, $y \in \downarrow (ev[P_1](f)(\sigma)) \subset \downarrow (ev[P_1](g)(\sigma))$. Therefore, there exists $z \in ev[P_1](g)(\sigma)$ such that $y \leq z$. One the one hand, we can notice that $z \in ev[P_1](g)(\sigma) \subset ev[P_1](g)(\sigma) \cup ev[P_2](g)(\sigma)$, and on the other hand, that $x \leq y \leq z$. Therefore, $x \in \downarrow(ev[P_1](g)(\sigma) \cup ev[P_2](g)(\sigma))$. The proof is symmetrical if $y \in ev[P_2](f)(\sigma)$. Therefore, we got our result.\bigskip
-
-\item When $P = P_1 [p] P_2$, assume that $ev[P_1]$ and $ev[P_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[P](f) = \lambda \sigma. \{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\} \leq_{\mathcal{F}'} \lambda \sigma. \{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma)\} = ev[P](g)$ .\newline
-To that extent, we have to prove that:
-\begin{align*}
-\forall \sigma \in \Sigma, & \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\}) \\
-\subset & \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma)\})
-\end{align*}
-Let $\sigma \in \Sigma$. As usual, if  $\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\} = \emptyset$, there is nothing to prove.\bigskip
-
-Otherwise, let $x \in \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\})$. Then, there exists $y \in \{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma)\}$ such that $x \leq y$. We can tell that there exists $t_1 \in ev[P_1](f)(\sigma)$ and $t_2 \in ev[P_1](2)(\sigma)$ such that $y = t_1p+t_2(1-p)$.\newline
-With the Lemma \ref{magical_lemma}, $t_1 \in ev[P_1](f)(\sigma) \subset \downarrow ( ev[P_1](f)(\sigma)) \subset \downarrow (ev[P_1](g)(\sigma))$, and therefore, there exists $z_1 \in ev[P_1](g)(\sigma)$ such that $t_1 \leq z_1$. Symmetrically, there exists $z_2 \in ev[P_2](g)(\sigma)$ such that $t_2 \leq z_2$.\bigskip
-
-Now, we have $x \leq y = t_1p+t_2(1-p) \leq z_1p+z_2(1-p)$, with $z_1 \in ev[P_2](g)(\sigma)$ and $z_2 \in ev[P_2](g)(\sigma)$.\newline
-This proves that $x \in \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma)\})$.\bigskip
-
-\item When $P = \texttt{ if } b \texttt{ then } P_1 \texttt{ else } P_2$, assume that $ev[P_1]$ and $ev[P_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[P](f) = \lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma) \} \leq_{\mathcal{F}'} \lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma) \} = ev[P](g)$. \newline
-To that extent, we have to prove that:
-\begin{align*}
-\forall \sigma \in \Sigma, & \downarrow \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\, \\
-& t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma) \} \\
-\subset & \downarrow  \{ [\![b : true ]\!](\sigma) \cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\, \\
-& t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma) \} \\
-\end{align*}
-Let $\sigma \in \Sigma$. If $\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma) \} = \emptyset$, then the result is immediate.\bigskip
-
-Otherwise, let $x \in \downarrow \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](f)(\sigma), t_2 \in ev[P_2](f)(\sigma) \} $.\newline
-Then, there exists $t_1 \in ev[P_1](f)(\sigma)$ and $t_2 \in ev[P_2](f)(\sigma)$ such that $x \leq  [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 $. Let $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2
-$\bigskip
-
-Using the Lemma \ref{magical_lemma}, we get that $t_1 \in ev[P_1](f)(\sigma) \subset \downarrow(ev[P_1](f)(\sigma)) \subset \downarrow(ev[P_1](g)(\sigma))$. Therefore, there exists $z_1 \in ev[P_1](g)(\sigma)$ such that $t_1 \leq z_1$. And symmetrically, there exists $z_2 \in ev[P_2](g)(\sigma)$ such that $t_2 \leq z_2$.\newline
-
-Let $z = [\![b : true ]\!](\sigma) \cdot z_1 + [\![b : false ]\!](\sigma) \cdot z_2$.\newline
-If $b$ holds in $\sigma$, then $y = t_1$ and $z = z_1$. We had $x \leq y$, and $t_1 \leq z_1$. Thus, $x \leq z$. Symmetrically, if $b$ does not hold in $\sigma$, then, $y = t_2$ and $z = z_2$ and we symmetrically prove that $x \leq z$. And we easily see that $z \in \{ [\![b : true ]\!](\sigma) \cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\,
-t_1 \in ev[P_1](g)(\sigma), t_2 \in ev[P_2](g)(\sigma) \}$. This concludes this point of the proof.\bigskip
-
-\item When $P = \texttt{ while }(b)\texttt{ do }\{P_1\}$, assume that $ev[P_1]$ is monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[P](f) =$ lfp $(\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](X)(\sigma), t_2 \in f(\sigma) \}) \leq_{\mathcal{F}'}$ lfp $(\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](X)(\sigma), t_2 \in g(\sigma) \}) =ev[P](g)$. \bigskip
-
-We proved previously that $\mathcal{F}'$ was a complete partial order. Therefore, Kleene's fixed-point theorem can be applied here, and we can compute the two least fixed-point previously mentioned.\bigskip
-
-Let $F_f(X)$ denote $\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](X)(\sigma), t_2 \in f(\sigma) \}$, and symmetrically, let $F_g(X)$ denote $\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](X)(\sigma), t_2 \in g(\sigma) \}$.\bigskip
-
-We seek to prove that lfp $F_f \leq_{\mathcal{F}'} $ lfp $ F_g$. Applying Kleene's Theorem (recall that $\bot : \sigma \rightarrow \emptyset$), we get that 
-\begin{align*}
-\textnormal{lfp } F_f = \Sup_{n \in \NN^*}(F_f^n(\bot)) \\
-\textnormal{lfp } F_g = \Sup_{n \in \NN^*}(F_g^n(\bot))
-\end{align*}
-Therefore, we have to prove that:
-\begin{align*}
-\forall \sigma \in \Sigma, \downarrow ((\Sup_{n \in \NN^*}(F_f^n(\bot)))(\sigma)) \subset  \downarrow ((\Sup_{n \in \NN^*}(F_g^n(\bot)))(\sigma)) 
-\end{align*}
-One easily verifies that, to prove the previous proposition, it is sufficient to prove that:
-\begin{align*}
-\forall n \in \NN, F_f^n(\bot) \leq_{\mathcal{F}'} F_g^n(\bot)
-\end{align*}
-Or, equivalently:
-\begin{align*}
-\forall n \in \NN, \forall \sigma \in \Sigma, \downarrow(F_f^n(\bot)(\sigma)) \subset \downarrow(F_g^n(\bot)(\sigma))
-\end{align*}
-This is proven by induction:
-\begin{itemize}
-\item For $n = 0$, $F_f^0 = F_g^0 = Id_{\mathcal{F}'}$, and therefore, the result is immediate.
-\item If, for one $n \in \NN$, we get that $\forall \sigma \in \Sigma, \downarrow(F_f^n(\bot)(\sigma)) \subset \downarrow(F_g^n(\bot)(\sigma))$, then, let $\sigma \in \Sigma$ and let $x \in \downarrow(F_f^{n+1}(\bot)(\sigma))$. We shall prove that $x \in \downarrow(F_g^{n+1}(\bot)(\sigma))$.\bigskip
-
-We know that there exists $y \in F_f^{n+1}(\bot)(\sigma)$ such that $x \leq y$. And as $y \in F_f^{n+1}(\bot)(\sigma) = F_f(F_f^n(\bot))(\sigma) = \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[P_1](F_f^n(\bot))(\sigma), t_2 \in f(\sigma) \}$. \bigskip
-
-Hence, there exists $t_1 \in ev[P_1](F_f^n(\bot))(\sigma)$ and $t_2 \in f(\sigma)$ such that $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 $.\newline
-With the Lemma \ref{magical_lemma} we get that $t_1 \in ev[P_1](F_f^n(\bot))(\sigma) \subset \downarrow(ev[P_1](F_f^n(\bot))(\sigma))$.\newline
-With the induction hypothesis, that $F_f^n(\bot) \leq_{\mathcal{F}'} F_g^n(\bot)$, and with the monotonicity of $ev[P_1]$, we get that $ev[P_1](F_f^n(\bot)) \leq_{\mathcal{F}'} ev[P_1](F_g^n(\bot))$, and particularly, that $\downarrow(ev[P_1](F_f^n(\bot))(\sigma)) \subset \downarrow(ev[P_1](F_g^n(\bot))(\sigma))$. Hence, $t_1 \in \downarrow(ev[P_1](F_g^n(\bot))(\sigma))$.\newline
-Symetrically, recall that $f \leq_{\mathcal{F}'} g$, and therefore, $\downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$. And as $t_2 \in f(\sigma)$, then $t_2 \in \downarrow(f(\sigma))$, and hence, $t_2 \in \downarrow(g(\sigma))$.\bigskip
-
-Hence, e get that there exists $z_1 \in ev[P_1](F_g^n(\bot))(\sigma)$ and $z_2 \in g(\sigma)$ such that $t_1 \leq z_1$ and $t_2 \leq z_2$.\newline
-Therefore, $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \leq [\![b : true ]\!](\sigma)\cdot z_1 + [\![b : false ]\!](\sigma)\cdot z_2 \in F_g(F_g^n(\bot))(\sigma) = F_g^{n+1}(\sigma)$. Therefore, $y \in \downarrow(F_g^{n+1}(\sigma))$. And as $x \leq y$, then $x \in \downarrow(F_g^{n+1}(\sigma))$.\bigskip
-
-This concludes the proof.
-\end{itemize}
-\end{itemize} 
+%We define the lower closure of a subset of $\RRposi$.
+%\begin{definition}
+%If $U$ is a subset of $\RRposi$, then the lower closure $\downarrow U$ of $U$ is defined as:
+%$$x \in \downarrow U \textnormal{ iff } \exists y \in U, x \leq y$$
+%\end{definition}
+%We immediately get the following lemma, which will be used a lot in our proofs:
+%\begin{lemma}
+%\label{magical_lemma}
+%
+%\begin{enumerate}
+%\item If $U$ is a subset of $\RRposi$, then $U \subset \downarrow U$.
+%\item $\downarrow U = \emptyset$ iff $U = \emptyset$ 
+%\end{enumerate}
+%\end{lemma}
+%
+%\begin{theorem} The following order is a partial order over $\mathcal{F}'$:
+%$$f \leq_{\mathcal{F}'} g \textnormal{ iff } \forall \sigma \in \Sigma, \downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$$
+%\end{theorem}
+%\begin{proof} Reflexivity, antisymmetry and transitivity are respectively obtained from the reflexivity, antisymmetry and transitivity of $\subset$ as an order relation over $\RRposi$.
+%\end{proof}
+%
+%\begin{theorem}
+%$(\mathcal{F}',\leq_{\mathcal{F}'})$ is a chain-complete partial order.
+%\end{theorem}
+%\begin{proof}
+%\begin{itemize}
+%\item One easily sees that $\bot : \sigma \rightarrow \emptyset$ is the minimal element
+%\item Let $S = \{f_1, f_2, \dots \}$ be a chain of $\mathcal{F}'$. Therefore, we have $f_1 \leq_{\mathcal{F}'} f_2 \leq_{\mathcal{F}'} \dots$.\newline
+%We shall consider $f \in \mathcal{F}'$ defined by: $f : \sigma \rightarrow \cup_{n \in \NN^*} f_n(\sigma)$. We will prove that $f$ is the least upper bound of $S$.
+%\begin{itemize}
+%\item Let $n \in \NN^*$ and $\sigma \in \Sigma$. We have to prove that $\downarrow(f_n(\sigma)) \subset \downarrow (f(\sigma))$. If $f_n(\sigma) = \emptyset$, then we immediately get the result.\newline 
+%Otherwise, let $x \in \downarrow(f_n(\sigma))$. Therefore, there exists $y \in f_n(\sigma)$ such that $x \leq y$. We immediately deduce that $y \in f_n(\sigma) \subset \cup_{n \in \NN^*} f_n(\sigma) = f(\sigma)$, and as $x \leq y$, then $x \in \downarrow (f(\sigma))$. As this holds for all $n \in \NN^*$ and for all $\sigma \in \Sigma$, we get that:
+%$$\forall n \in \NN^*, \forall \sigma \in \Sigma, \downarrow(f_n(\sigma)) \subset \downarrow(f(\sigma))$$
+%And therefore, $\forall n \in \NN^*$, $f_n \leq_{\mathcal{F}'} f$. Thus, $f$ is an upper bound for $S$.\bigskip
+%
+%\item Let $g$ be another upper bound of $S$. Therefore, we have:
+%$$\forall n \in \NN^*, \forall \sigma \in \Sigma, \downarrow(f_n(\sigma)) \subset \downarrow(g(\sigma))$$
+%Let $\sigma \in \Sigma$. We want to prove that $\downarrow (f(\sigma)) \subset \downarrow(g(\sigma))$. If $f(\sigma) = \emptyset$, the result is immediate.\newline
+%Otherwise, let $x \in \downarrow(f(\sigma))$. Therefore, there exists $y \in f(\sigma)$ such that $x \leq y$. As $y \in f(\sigma)$, there exists $n \in \NN^*$ such that $y \in f_n(\sigma)$. With the Lemma \ref{magical_lemma}, we get that $y \in \downarrow(f_n(\sigma))$, and then, with the previous hypothesis, $y \in \downarrow(g(\sigma))$. Hence, there exists $z \in g(\sigma)$ with $y \leq z$. Thus, $x \leq z$, and therefore, $x \in \downarrow(g(\sigma))$.\newline
+%Therefore, $\forall \sigma \in \Sigma$, $\downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$, and thus, $f \leq_{\mathcal{F}'} g$. Hence, $f$ is the least upper bound of $S$.
+%\end{itemize} 
+%\end{itemize}
+%\end{proof}
+%
+%We proved the first point: $\mathcal{F}'$ is a chain-complete partial order.\newline
+%Now, we want to prove the following theorem.
+%
+%\begin{theorem}
+%For all pGCL programs $S$, $ev[S] : \mathcal{F}' \rightarrow \mathcal{F}'$ is a monotone function
+%\end{theorem}
+%\begin{proof}
+%We will prove it by induction, using the rules in Table \ref{table:rules_ev}.
+%\begin{itemize}
+%\item Obviously, when $S = \texttt{skip}$, if $f \leq_{\mathcal{F}'} g$, then $ev[skip](f) = f \leq_{\mathcal{F}'} g = ev[skip](g)$\bigskip
+%
+%\item $S = \{ x := A\}$, if $f \leq_{\mathcal{F}'} g$, then we get that $\forall \sigma \in \Sigma$, $\downarrow(f(\sigma)) \subset \downarrow (g(\sigma))$. Particularly, for all $\sigma' \in \Sigma$ such that there exists $\sigma \in \Sigma$ where $\sigma' = \sigma[x/A]$, we get $\downarrow(f(\sigma')) \subset \downarrow(g(\sigma'))$. Therefore, $ev[x := A](f) = \lambda \sigma. f(\sigma[x/A]) \leq_{\mathcal{F}'} \lambda \sigma. g(\sigma[x/A]) = ev[x := A](g)$
+%\bigskip
+%
+%\item When $S = S_1;S_2$, assume that $ev[S_1]$ and $ev[S_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we get that $ev[S_2](f) \leq_{\mathcal{F}'} ev[S_2](g)$, and then, $ev[S_1](ev[S_2](f)) \leq_{\mathcal{F}'} ev[S_1](ev[S_2](g))$. Finally, we proved that $ev[S_1 ; S_2](f) \leq_{\mathcal{F}'} ev[S_1 ; S_2](g)$
+%\bigskip
+%
+%\item When $S = S_1 \square S_2$, assume that $ev[S_1]$ and $ev[S_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[S](f) = \lambda\sigma. ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma) \leq_{\mathcal{F}'} \lambda\sigma. ev[S_1](g)(\sigma) \cup ev[S_2](g)(\sigma) = ev[S](g)$. \newline
+%To that extent, we have to prove that, 
+%$$\forall \sigma \in \Sigma, \downarrow(ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma)) \subset \downarrow(ev[S_1](g)(\sigma) \cup ev[S_2](g)(\sigma))$$
+%Let $\sigma \in \Sigma$. If $ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma) = \emptyset$, then there is nothing to prove.\bigskip
+%
+%Otherwise, let $x \in \downarrow(ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma))$. Then, there exists $y \in ev[P_1](f)(\sigma) \cup ev[S_2](f)(\sigma)$ such that $x \leq y$. We assume that $y \in ev[P_1](f)(\sigma)$. Then, with the Lemma \ref{magical_lemma}, $y \in \downarrow (ev[S_1](f)(\sigma)) \subset \downarrow (ev[S_1](g)(\sigma))$. Therefore, there exists $z \in ev[S_1](g)(\sigma)$ such that $y \leq z$. One the one hand, we can notice that $z \in ev[S_1](g)(\sigma) \subset ev[S_1](g)(\sigma) \cup ev[S_2](g)(\sigma)$, and on the other hand, that $x \leq y \leq z$. Therefore, $x \in \downarrow(ev[S_1](g)(\sigma) \cup ev[S_2](g)(\sigma))$. The proof is symmetrical if $y \in ev[S_2](f)(\sigma)$. Therefore, we got our result.\bigskip
+%
+%\item When $S = S_1 [p] S_2$, assume that $ev[S_1]$ and $ev[S_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[S](f) = \lambda \sigma. \{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma)\} \leq_{\mathcal{F}'} \lambda \sigma. \{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma)\} = ev[S](g)$ .\newline
+%To that extent, we have to prove that:
+%\begin{align*}
+%\forall \sigma \in \Sigma, & \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma)\}) \\
+%\subset & \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma)\})
+%\end{align*}
+%Let $\sigma \in \Sigma$. As usual, if  $\{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma)\} = \emptyset$, there is nothing to prove.\bigskip
+%
+%Otherwise, let $x \in \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma)\})$. Then, there exists $y \in \{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma)\}$ such that $x \leq y$. We can tell that there exists $t_1 \in ev[S_1](f)(\sigma)$ and $t_2 \in ev[S_1](2)(\sigma)$ such that $y = t_1p+t_2(1-p)$.\newline
+%With the Lemma \ref{magical_lemma}, $t_1 \in ev[S_1](f)(\sigma) \subset \downarrow ( ev[S_1](f)(\sigma)) \subset \downarrow (ev[S_1](g)(\sigma))$, and therefore, there exists $z_1 \in ev[S_1](g)(\sigma)$ such that $t_1 \leq z_1$. Symmetrically, there exists $z_2 \in ev[S_2](g)(\sigma)$ such that $t_2 \leq z_2$.\bigskip
+%
+%Now, we have $x \leq y = t_1p+t_2(1-p) \leq z_1p+z_2(1-p)$, with $z_1 \in ev[S_2](g)(\sigma)$ and $z_2 \in ev[S_2](g)(\sigma)$.\newline
+%This proves that $x \in \downarrow (\{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma)\})$.\bigskip
+%
+%\item When $S = \texttt{ if } b \texttt{ then } S_1 \texttt{ else } S_2$, assume that $ev[S_1]$ and $ev[S_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[S](f) = \lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \} \leq_{\mathcal{F}'} \lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma) \} = ev[S](g)$. \newline
+%To that extent, we have to prove that:
+%\begin{align*}
+%\forall \sigma \in \Sigma, & \downarrow \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\, \\
+%& t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \} \\
+%\subset & \downarrow  \{ [\![b : true ]\!](\sigma) \cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\, \\
+%& t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma) \} \\
+%\end{align*}
+%Let $\sigma \in \Sigma$. If $\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \} = \emptyset$, then the result is immediate.\bigskip
+%
+%Otherwise, let $x \in \downarrow \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \} $.\newline
+%Then, there exists $t_1 \in ev[S_1](f)(\sigma)$ and $t_2 \in ev[S_2](f)(\sigma)$ such that $x \leq  [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 $. Let $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2
+%$\bigskip
+%
+%Using the Lemma \ref{magical_lemma}, we get that $t_1 \in ev[S_1](f)(\sigma) \subset \downarrow(ev[S_1](f)(\sigma)) \subset \downarrow(ev[S_1](g)(\sigma))$. Therefore, there exists $z_1 \in ev[S_1](g)(\sigma)$ such that $t_1 \leq z_1$. And symmetrically, there exists $z_2 \in ev[S_2](g)(\sigma)$ such that $t_2 \leq z_2$.\newline
+%
+%Let $z = [\![b : true ]\!](\sigma) \cdot z_1 + [\![b : false ]\!](\sigma) \cdot z_2$.\newline
+%If $b$ holds in $\sigma$, then $y = t_1$ and $z = z_1$. We had $x \leq y$, and $t_1 \leq z_1$. Thus, $x \leq z$. Symmetrically, if $b$ does not hold in $\sigma$, then, $y = t_2$ and $z = z_2$ and we symmetrically prove that $x \leq z$. And we easily see that $z \in \{ [\![b : true ]\!](\sigma) \cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\,
+%t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma) \}$. This concludes this point of the proof.\bigskip
+%
+%\item When $S = \texttt{ while }(b)\texttt{ do }\{S_1\}$, assume that $ev[S_1]$ is monotone. Then, if $f \leq_{\mathcal{F}'} g$, we shall prove that $ev[S](f) =$ lfp $(\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in f(\sigma) \}) \leq_{\mathcal{F}'}$ lfp $(\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in g(\sigma) \}) =ev[S](g)$. \bigskip
+%
+%We proved previously that $\mathcal{F}'$ was a chain-complete partial order. Therefore, Kleene's fixed-point theorem can be applied here, and we can compute the two least fixed-point previously mentioned.\bigskip
+%
+%Let $F_f(X)$ denote $\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in f(\sigma) \}$, and symmetrically, let $F_g(X)$ denote $\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in g(\sigma) \}$.\bigskip
+%
+%We seek to prove that lfp $F_f \leq_{\mathcal{F}'} $ lfp $ F_g$. Applying Kleene's Theorem (recall that $\bot : \sigma \rightarrow \emptyset$), we get that 
+%\begin{align*}
+%\textnormal{lfp } F_f = \Sup_{n \in \NN^*}(F_f^n(\bot)) \\
+%\textnormal{lfp } F_g = \Sup_{n \in \NN^*}(F_g^n(\bot))
+%\end{align*}
+%Therefore, we have to prove that:
+%\begin{align*}
+%\forall \sigma \in \Sigma, \downarrow ((\Sup_{n \in \NN^*}(F_f^n(\bot)))(\sigma)) \subset  \downarrow ((\Sup_{n \in \NN^*}(F_g^n(\bot)))(\sigma)) 
+%\end{align*}
+%One easily verifies that, to prove the previous proposition, it is sufficient to prove that:
+%\begin{align*}
+%\forall n \in \NN, F_f^n(\bot) \leq_{\mathcal{F}'} F_g^n(\bot)
+%\end{align*}
+%Or, equivalently:
+%\begin{align*}
+%\forall n \in \NN, \forall \sigma \in \Sigma, \downarrow(F_f^n(\bot)(\sigma)) \subset \downarrow(F_g^n(\bot)(\sigma))
+%\end{align*}
+%This is proven by induction:
+%\begin{itemize}
+%\item For $n = 0$, $F_f^0 = F_g^0 = Id_{\mathcal{F}'}$, and therefore, the result is immediate.
+%\item If, for one $n \in \NN$, we get that $\forall \sigma \in \Sigma, \downarrow(F_f^n(\bot)(\sigma)) \subset \downarrow(F_g^n(\bot)(\sigma))$, then, let $\sigma \in \Sigma$ and let $x \in \downarrow(F_f^{n+1}(\bot)(\sigma))$. We shall prove that $x \in \downarrow(F_g^{n+1}(\bot)(\sigma))$.\bigskip
+%
+%We know that there exists $y \in F_f^{n+1}(\bot)(\sigma)$ such that $x \leq y$. And as $y \in F_f^{n+1}(\bot)(\sigma) = F_f(F_f^n(\bot))(\sigma) = \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](F_f^n(\bot))(\sigma), t_2 \in f(\sigma) \}$. \bigskip
+%
+%Hence, there exists $t_1 \in ev[S_1](F_f^n(\bot))(\sigma)$ and $t_2 \in f(\sigma)$ such that $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 $.\newline
+%With the Lemma \ref{magical_lemma} we get that $t_1 \in ev[S_1](F_f^n(\bot))(\sigma) \subset \downarrow(ev[S_1](F_f^n(\bot))(\sigma))$.\newline
+%With the induction hypothesis, that $F_f^n(\bot) \leq_{\mathcal{F}'} F_g^n(\bot)$, and with the monotonicity of $ev[S_1]$, we get that $ev[S_1](F_f^n(\bot)) \leq_{\mathcal{F}'} ev[S_1](F_g^n(\bot))$, and particularly, that $\downarrow(ev[S_1](F_f^n(\bot))(\sigma)) \subset \downarrow(ev[S_1](F_g^n(\bot))(\sigma))$. Hence, $t_1 \in \downarrow(ev[S_1](F_g^n(\bot))(\sigma))$.\newline
+%Symetrically, recall that $f \leq_{\mathcal{F}'} g$, and therefore, $\downarrow(f(\sigma)) \subset \downarrow(g(\sigma))$. And as $t_2 \in f(\sigma)$, then $t_2 \in \downarrow(f(\sigma))$, and hence, $t_2 \in \downarrow(g(\sigma))$.\bigskip
+%
+%Hence, e get that there exists $z_1 \in ev[S_1](F_g^n(\bot))(\sigma)$ and $z_2 \in g(\sigma)$ such that $t_1 \leq z_1$ and $t_2 \leq z_2$.\newline
+%Therefore, $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \leq [\![b : true ]\!](\sigma)\cdot z_1 + [\![b : false ]\!](\sigma)\cdot z_2 \in F_g(F_g^n(\bot))(\sigma) = F_g^{n+1}(\sigma)$. Therefore, $y \in \downarrow(F_g^{n+1}(\sigma))$. And as $x \leq y$, then $x \in \downarrow(F_g^{n+1}(\sigma))$.\bigskip
+%
+%This concludes the proof.
+%\end{itemize}
+%\end{itemize} 
+%
+%%lfp ($\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$\\$t_1 \in ev[S](X)(\sigma), t_2 \in f(\sigma) \}$))
+%
+%\end{proof}
+%
+%
+%
+%\subsection{Test with another order}
+%Can we get a better result with another order ?
+% Let $\leq_{\mathcal{F}'}$ define the following relation over $\mathcal{F}'$:
+% $$f \leq_{\mathcal{F}'} g \textnormal{ iff } \forall \sigma \in \Sigma, f(\sigma) \subset g(\sigma)$$
+%
+%
+%\begin{theorem} $(\mathcal{F}',\leq_{\mathcal{F}'})$ is a partial order.
+%\end{theorem}
+%\begin{proof}
+%\begin{itemize}
+%\item Obviously, $\forall \sigma \in \Sigma$, $f(\sigma) \subset f(\sigma)$, and therefore, $f \leq_{\mathcal{F}'} f$
+%\item If $f \leq_{\mathcal{F}'} g$ and $g \leq_{\mathcal{F}'} h$, then we have: $\forall \sigma \in \Sigma$, $f(\sigma) \subset g(\sigma)$ and $g(\sigma) \subset h(\sigma)$; thus, $\forall \sigma \in \Sigma$, $f(\sigma) \subset h(\sigma)$. Hence, $f \leq_{\mathcal{F}'} h$.
+%\item If $f \leq_{\mathcal{F}'} g$ and $g \leq_{\mathcal{F}'} f$, then we have: $\forall \sigma \in \Sigma$, $f(\sigma) \subset g(\sigma)$ and $g(\sigma) \subset f(\sigma)$. Thus, $\forall \sigma \in \Sigma$, $f(\sigma) = g(\sigma)$, and therefore, $f = g$
+%\end{itemize}
+%\end{proof}
+%
+%\begin{theorem}
+%$(\mathcal{F}',\leq_{\mathcal{F}'})$ is a chain-complete partial order.
+%\end{theorem}
+%\begin{proof}
+%\begin{itemize}
+%\item One easily sees that $\bot = \lambda\sigma.\emptyset$ is the minimal element, as $\forall f \in \mathcal{F}'$, $\forall \sigma \in \Sigma$, $\bot(\sigma) = \emptyset \subset f(\sigma)$
+%\item Let $S = \{f_1, f_2, \dots \}$ be a chain of $\mathcal{F}'$. Therefore, we have $f_1 \leq_{\mathcal{F}'} f_2 \leq_{\mathcal{F}'} \dots$.\newline
+%We shall consider $f \in \mathcal{F}'$ defined by: $f : \sigma \rightarrow \cup_{n \in \NN^*} f_n(\sigma)$. We will prove that $f$ is the least upper bound of $S$.
+%\begin{itemize}
+%\item Let $n \in \NN^*$ and $\sigma \in \Sigma$. We immediately get that that $f_n(\sigma) \subset f(\sigma)$. Therefore, $\forall n \in \NN^*$, $f_n \leq_{\mathcal{F}'} f$. Thus, $f$ is an upper bound for $S$.\bigskip
+%
+%\item Let $g$ be another upper bound of $S$. Therefore, we have:
+%$$\forall n \in \NN^*, \forall \sigma \in \Sigma, f_n(\sigma) \subset g(\sigma)$$
+%Let $\sigma \in \Sigma$. We want to prove that $f(\sigma) \subset g(\sigma)$.\newline
+%We can simply notice that, $\forall n \in \NN^*$, $f_n(\sigma) \subset g(\sigma)$, and therefore, $f(\sigma) = \cup_{n \in \NN^*}(f_n(\sigma)) \subset g(\sigma)$. Thus, $f \leq_{\mathcal{F}'} g$.\newline
+%Hence, $f$ is the least upper bound of $S$.
+%\end{itemize} 
+%\end{itemize}
+%\end{proof}
+%
+%We proved the first point: $\mathcal{F}'$ is a chain-complete partial order.\newline
+%Now, we want to prove the following theorem.
+%
+%\begin{theorem}
+%For all pGCL programs $S$, $ev[S] : \mathcal{F}' \rightarrow \mathcal{F}'$ is a monotone function
+%\end{theorem}
+%\begin{proof}
+%We will prove it by induction, using the rules in Table \ref{table:rules_ev}.
+%\begin{itemize}
+%\item Obviously, when $S = \texttt{skip}$, if $f \leq_{\mathcal{F}'} g$, then $ev[skip](f) = f \leq_{\mathcal{F}'} g = ev[skip](g)$\bigskip
+%
+%\item $S = \{ x := A\}$, if $f \leq_{\mathcal{F}'} g$, then we get that $\forall \sigma \in \Sigma$, $f(\sigma) \subset g(\sigma)$. Particularly, for all $\sigma' \in \Sigma$ such that there exists $\sigma \in \Sigma$ where $\sigma' = \sigma[x/A]$, we get $f(\sigma') \subset g(\sigma')$. Therefore, $ev[x := A](f) = \lambda \sigma. f(\sigma[x/A]) \leq_{\mathcal{F}'} \lambda \sigma. g(\sigma[x/A]) = ev[x := A](g)$
+%\bigskip
+%
+%\item When $S = S_1;S_2$, our induction hypothesis states that $ev[S_1]$ and $ev[S_2]$ are monotone. Then, if $f \leq_{\mathcal{F}'} g$, we get that $ev[S_2](f) \leq_{\mathcal{F}'} ev[S_2](g)$, and then, $ev[S_1](ev[S_2](f)) \leq_{\mathcal{F}'} ev[S_1](ev[S_2](g))$. Finally, we proved that $ev[S_1 ; S_2](f) \leq_{\mathcal{F}'} ev[S_1 ; S_2](g)$
+%\bigskip
+%
+%\item When $S = S_1 \square S_2$, let $f,g \in \mathcal{F}'$ such that $f \leq_{\mathcal{F}'} g$. We shall prove that:
+%\begin{align*} 
+% ev[S](f) & = \lambda\sigma. ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma) & \\
+%& \leq_{\mathcal{F}'} \lambda\sigma. ev[S_1](g)(\sigma) \cup ev[S_2](g)(\sigma) &= ev[S](g)
+%\end{align*}
+%
+%As $ev[S_1]$ and $ev[S_2]$ are monotone (by the induction hypothesis), we get that $ev[S_1](f) \leq_{\mathcal{F}'} ev[S_1](g)$ and $ev[S_2](f) \leq_{\mathcal{F}'} ev[S_2](g)$, or equivalently:
+%\begin{align*}
+%\forall \sigma \in \Sigma, ev[S_1](f)(\sigma) \subset ev[S_1](g)(\sigma) \\
+%\forall \sigma \in \Sigma, ev[S_2](f)(\sigma) \subset ev[S_2](g)(\sigma) \\
+%\end{align*}
+%Let $\sigma \in \Sigma$. We easily notice that $ev[S_1](f)(\sigma) \subset ev[S_1](g)(\sigma) \subset ev[S_1](g)(\sigma) \cup ev[S_2](g)(\sigma)$, and symetrically, that $ev[S_2](f)(\sigma) \subset ev[S_2](g)(\sigma) \subset ev[S_1](g)(\sigma) \cup ev[S_2](g)(\sigma)$. Therefore, $ev[S_1](f)(\sigma) \cup ev[S_2](f)(\sigma) \subset ev[S_1](g)(\sigma) \cup ev[S_2](g)(\sigma)$.\newline
+%Hence, we get our result.\bigskip
+%
+%\item When $S = S_1 [p] S_2$, let $f,g \in \mathcal{F}'$ such that $f \leq_{\mathcal{F}'} g$. We shall prove that: 
+%\begin{align*}
+% ev[S](f) &= \lambda \sigma. \{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma)\} & \\ 
+% \leq_{\mathcal{F}'} & \lambda \sigma. \{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma)\} &= ev[S](g)
+%\end{align*}
+%\bigskip
+%
+%To that extent, we shall prove that:
+%\begin{align*}
+%\forall \sigma \in \Sigma, & \{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma)\} \\
+%\subset & \{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma)\}
+%\end{align*}
+%
+%Let $\sigma \in \Sigma$. If  $\{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma)\} = \emptyset$, there is nothing to prove.\bigskip
+%
+%Otherwise, let $x \in \{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma)\}$. Then,  there exists $t_1 \in ev[S_1](f)(\sigma)$ and $t_2 \in ev[S_2](f)(\sigma)$ such that $x = t_1p+t_2(1-p)$.\newline
+%As $ev[S_1]$ is monotone (by the induction hypothesis), we get that $ev[S_1](f) \leq_{\mathcal{F}'} ev[S_1](g)$. Particularly, $ev[S_1](f)(\sigma) \subset ev[S_1](g)(\sigma)$. Therefore, $t_1 \in ev[S_1](g)(\sigma)$. Symmetrically (with the part of the induction hypothesis concerning $ev[S_2]$), we prove that $t_2 \in ev[S_2](g)(\sigma)$.Therefore, $x \in \{t_1p+t_2(1-p) \,|\, t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma)\}$.\bigskip
+%
+%\item When $S = \texttt{ if } b \texttt{ then } S_1 \texttt{ else } S_2$, let $f,g\in\mathcal{F}'$ such that $f \leq_{\mathcal{F}'} g$. We shall prove that: 
+%\begin{align*}
+%& ev[S](f) \\
+%=& \lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \} \\
+%\leq_{\mathcal{F}'}& \lambda\sigma.\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma) \} \\
+%=& ev[S](g).
+%\end{align*}
+%
+%To that extent, we have to prove that:
+%\begin{align*}
+%\forall \sigma \in \Sigma, & \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\, \\
+%& t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \} \\
+%\subset &  \{ [\![b : true ]\!](\sigma) \cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\, \\
+%& t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma) \} \\
+%\end{align*}
+%Let $\sigma \in \Sigma$. If $\{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \} = \emptyset$, then the result is immediate.\bigskip
+%
+%Otherwise, let $x \in \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](f)(\sigma), t_2 \in ev[S_2](f)(\sigma) \} $.\newline
+%Then, there exists $t_1 \in ev[S_1](f)(\sigma)$ and $t_2 \in ev[S_2](f)(\sigma)$ such that $x =  [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 $. Let $y = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2
+%$\bigskip
+%
+%Using the monotonicity of $ev[S_1]$ (by the induction hypothesis), we get that $ev[S_1](f) \leq_{\mathcal{F}'} ev[S_1](g)$, and particularly,$ev[S_1](f)(\sigma) \subset ev[S_1](g)(\sigma)$. Therefore, $t_1 \in ev[S_1](g)(\sigma)$. Symmetrically, $t_2 \in ev[S_2](g)(\sigma)$.\newline
+%Hence, $x \in \{ [\![b : true ]\!](\sigma) \cdot t_1 + [\![b : false ]\!](\sigma) \cdot t_2 \,|\,
+%t_1 \in ev[S_1](g)(\sigma), t_2 \in ev[S_2](g)(\sigma) \}$.\bigskip
+%
+%\item When $S = \texttt{ while }(b)\texttt{ do }\{S_1\}$, let $f,g\in\mathcal{F}'$ such that $f \leq_{\mathcal{F}'} g$. We shall prove that:
+%\begin{align*}
+% & ev[S](f)  \\
+% =&\textnormal{ lfp }(\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in f(\sigma) \}) \\ \leq_{\mathcal{F}'}&\textnormal{ lfp }(\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in g(\sigma) \})\\
+% =& ev[S](g)
+% \end{align*}
+%
+%We will use the following notations:
+%\begin{align*}
+%F_f(X) &= \lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in f(\sigma) \} \\
+%F_g(X) &= \lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](X)(\sigma), t_2 \in g(\sigma) \}
+%\end{align*}
+%With these notations, our goal is to prove that:
+%\begin{align*}
+%ev[S](f) = \textnormal{ lfp } F_f \leq_{\mathcal{F}'} \textnormal{ lfp } F_g = ev[S](g)
+%\end{align*}
+%
+%In order for lfp $F_f$ and lfp $F_g$ to exist, we must first prove that $F_f$ and $F_g$ are monotonic: if $X \leq_{\mathcal{F}'} Y$. We want to prove that $F_f(X) \leq_{\mathcal{F}'} F_f(Y)$.\newline
+%As $ev[S_1]$ is monotone (by the induction hypothesis), we have that $\forall \sigma \in \Sigma$, $ev[S_1](X)(\sigma) \subset ev[S_1](Y)(\sigma)$.\newline
+%Now, let $\sigma \in \Sigma$. If $F_f(X)(\sigma) = \emptyset$, then obviously, $F_f(X)(\sigma) \subset F_f(Y)(\sigma)$.\newline
+%Else, let $x \in F_f(X)(\sigma)$. This means that there exists $t_1 \in  ev[S_1](X)(\sigma)$, $t_2 \in f(\sigma)$ such that $x = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 $. And as stated above, $ev[S_1](X)(\sigma) \subset ev[S_1](Y)(\sigma)$. Therefore, $t_1 \in ev[S_1](Y)(\sigma)$. This proves that $x \in F_f(Y)(\sigma)$.\newline
+%Hence, $\forall \sigma \in \Sigma$, $F_f(X)(\sigma) \subset F_g(X)(\sigma)$, and therefore, $F_f(X) \leq_{\mathcal{F}'} F_f(Y)$. Symmetrically, we can prove that $F_g(X) \leq_{\mathcal{F}'} F_g(Y)$.\bigskip
+%
+%Thus, $F_f$ and $F_g$ are both monotonic. And we proved previously that $\mathcal{F}'$ was a chain-complete partial order.  Therefore, Kleene's fixed-point theorem can be applied here, and we can compute the two least fixed-point previously mentioned.\bigskip
+%
+%Now that we know that lfp $F_f$ and lfp $F_g$ exist, we seek to prove that lfp $F_f \leq_{\mathcal{F}'} $ lfp $ F_g$. Applying Kleene's Theorem (recall that $\bot = \lambda \sigma. \emptyset$), we get that 
+%\begin{align*}
+%\textnormal{lfp } F_f = \Sup_{n \in \NN^*}(F_f^n(\bot)) \\
+%\textnormal{lfp } F_g = \Sup_{n \in \NN^*}(F_g^n(\bot))
+%\end{align*}\bigskip
+%
+%Therefore, we have to prove that:
+%$$\Sup_{n \in \NN^*} (F_f^n(\bot)) \leq_{\mathcal{F}'} \Sup_{n \in \NN^*} (F_g^n(\bot))$$
+%Or equivalently, that:
+%\begin{align*}
+%\forall \sigma \in \Sigma, (\Sup_{n \in \NN^*}(F_f^n(\bot)))(\sigma) \subset  (\Sup_{n \in \NN^*}(F_g^n(\bot)))(\sigma) 
+%\end{align*}\bigskip
+%
+%One easily verifies that, to prove the previous proposition, it is sufficient to prove that:
+%\begin{align*}
+%\forall n \in \NN, F_f^n(\bot) \leq_{\mathcal{F}'} F_g^n(\bot)
+%\end{align*}
+%Or, equivalently:
+%\begin{align*}
+%\forall n \in \NN, \forall \sigma \in \Sigma, F_f^n(\bot)(\sigma) \subset F_g^n(\bot)(\sigma)
+%\end{align*}\bigskip
+%
+%
+%This is proven by induction:
+%\begin{itemize}
+%\item For $n = 0$, $F_f^0 = F_g^0 = Id_{\mathcal{F}'}$, and therefore, $F_f^0(\bot) = F_g^0(\bot) = \bot$. Thus, the result is immediate.
+%\item If, for one $n \in \NN$, we get that $\forall \sigma \in \Sigma, F_f^n(\bot)(\sigma) \subset F_g^n(\bot)(\sigma)$, then let $\sigma \in \Sigma$ and assume that $F_f^{n+1}(\bot)(\sigma) \neq \emptyset$ (otherwise, the result is immediate).\bigskip
+%
+%Let $x \in F_f^{n+1}(\bot)(\sigma)$. We shall prove that $x \in F_g^{n+1}(\bot)(\sigma)$.\bigskip
+%
+%We know that $x \in F_f^{n+1}(\bot)(\sigma) = F_f(F_f^n(\bot))(\sigma) = \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\, t_1 \in ev[S_1](F_f^n(\bot))(\sigma), t_2 \in f(\sigma) \}$. \bigskip
+%
+%Hence, there exists $t_1 \in ev[S_1](F_f^n(\bot))(\sigma)$ and $t_2 \in f(\sigma)$ such that $x = [\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 $.\newline
+%
+%Using the induction hypothesis, we get that $F_f^n(\bot) \leq_{\mathcal{F}'} F_g^n(\bot)$, and using the monotonicity of $ev[S_1]$, we get that $ev[S_1](F_f^n(\bot)) \leq_{\mathcal{F}'} ev[S_1](F_g^n(\bot))$. Particularly, $ev[S_1](F_f^n(\bot))(\sigma) \subset ev[S_1](F_g^n(\bot))(\sigma)$. We also assumed at the beginning of this point that $f \leq_{\mathcal{F}'} g$, and therefore, $f(\sigma) \subset g(\sigma)$.\bigskip
+%
+%This proves that $t_1 \in ev[S_1](F_g^n(\bot))(\sigma)$, and that $t_2 \in g(\sigma)$.
+%Hence, $x \in F_g(F_g^n(\bot))(\sigma) = F_g^{n+1}(\bot)(\sigma)$.
+%
+%This concludes the proof.
+%\end{itemize}
+%\end{itemize} 
 
 %lfp ($\lambda X. (\lambda \sigma. \{[\![b : true ]\!](\sigma)\cdot t_1 + [\![b : false ]\!](\sigma)\cdot t_2 \,|\,$\\$t_1 \in ev[S](X)(\sigma), t_2 \in f(\sigma) \}$))
 
-\end{proof}
+%\end{proof}
 
 \end{document}

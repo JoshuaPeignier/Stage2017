@@ -34,15 +34,136 @@
   \vskip0pt%
 }
 
+\setbeamertemplate{blocks}[rounded]%
+[shadow=false]
+
 \begin{document}
 \frame{\titlepage}
 
+
+
+
 \section{Introduction}
-\begin{frame}
-\frametitle{test}
+%Explain here what are the probabilistic and nondeterministic choices
+%Explain why they are used:
+% - Probabilistic choices: allows resolution of problems with algorithms having a better average complexity
+% - Nondeterministic choices: used in model checking to model the unpredictable behavior of some programs -> Not meant to be executed
+% Give an example of a program combining both:
+% What does it do ?
+\begin{frame}{Plan}
+  \tableofcontents[sectionstyle=show/shaded]%,subsectionstyle=show/shaded/hide ]
 \end{frame}
 
+\begin{frame}
+\frametitle{Probabilistic programs}
+What are probabilistic programs ?
+\begin{itemize}
+\item<2-> Programs including probabilistic choice
+\item<3-> For each input, returns a distribution of outputs
+\item<4-> Widely used to solve problems with a better average complexity 
+% Mention the different examples: quicksort, Freivalds' matrix multiplication, or primality tests
+\end{itemize}
+\onslide<5->{
+\begin{block}{Example}
+$$\{ x := -1 \} [\frac{1}{3}] \{x := 1\}$$
+Simulates the flipping of a biased coin.
+\end{block}
+}
+\end{frame}
+
+\begin{frame}
+\frametitle{Nondeterministic programs}
+What are nondeterministic programs ?
+\begin{itemize}
+\item<2-> Programs including nondeterministic choice
+\item<3-> Not a concept meant to be executed: only exists for model checking purposes
+\item<4-> Represents the unpredictable behavior of a program.
+%Explain in details that it does not make any sens to talk about probabilities here, because, it only models possible outcomes, for which we have no more information than the very fact that they can happen.
+\end{itemize}
+\onslide<5->{
+\begin{block}{Example}
+$$\{ x := -1 \} \square \{x := 1\}$$
+\onslide<6->{Not the same as probabilistic choice: no probabilities here.}
+\end{block}
+}
+\end{frame}
+
+\begin{frame}
+\frametitle{Problem}
+
+\begin{block}{Problem}
+\onslide<2-> Defining proper semantics for programs containing both\newline
+\onslide<3->{$\rightarrow$ Complicated}
+\end{block}
+
+\onslide<4->{
+\begin{block}{Example}
+\onslide<5->{$$P_0\textnormal{: } \{ \{ x := 2 \} \square \{ x := 5 \} \} [p] \{ x := 7 \}$$}
+\onslide<6->{\begin{center} How can we semantically describe this program ? \end{center}}
+\end{block}
+}
+\end{frame}
+
+\section{Problem}
+\begin{frame}{Plan}
+  \tableofcontents[sectionstyle=show/shaded]%,subsectionstyle=show/shaded/hide ]
+\end{frame}
+%Explain that there exists clean semantics, for nondeterministic programs, but not for program including both ? Or at least, there exists some, but they are not clean.
+
+\begin{frame}
+\frametitle{Semantics for nondeterministic programs}
+\begin{itemize}
+\item<1-> For non-deterministic programs: weakest precondition calculus.
+\item<2-> Dijkstra: "programs are viewed as predicate transformers"
+\item<3-> $\varphi$ postcondition, $P$ program\newline
+\onslide<4-> {$\rightarrow wp[P](\varphi)$: \emph{weakest precondition}}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Semantics for nondeterministic programs}
+\begin{block}{Example}
+\onslide<1->{$$P_1\textnormal{: } x := -y ; x := x+1$$}
+\onslide<2->{$$\varphi = [x \geq 5]$$}
+\begin{align*}
+\onslide<3->{wp[P_1](\varphi)} &\onslide<4->{= wp[x := -y ; x := x+1]([x \geq 5])} \\
+&\onslide<5->{= wp[x := -y]([x + 1 \geq 5])} \\
+&\onslide<6->{= wp[x := -y]([x \geq 4]) }\\
+&\onslide<7->{= [-y  \geq 4]}\\
+&\onslide<8->{= [y \leq -4]}
+\end{align*}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{Semantics for probabilistic nondeterministic programs}
+\begin{itemize}
+\item<1-> There exists an extension for probabilistic nondeterministic programs
+\item<2-> $wp[P](\varphi)$: probability that $\varphi$ is satisfied after thee execution of $P$
+\end{itemize}
+\end{frame}
+%Give an example with the program $P_1$ in the report, and with a purely nondeterministic program.
+%Explain that this semantics was extended by McIver and Morgan to probabilistic nondeterministic programs, but that this is not satisfying. Explain why.
+
 \section{The previous semantics}
+
+\begin{frame}
+\frametitle{test}
+test
+\end{frame}
+
 \section{Our semantics}
+
+\begin{frame}
+\frametitle{test}
+test
+\end{frame}
+
 \section{Conclusion}
+
+\begin{frame}
+\frametitle{test}
+test
+\end{frame}
+
 \end{document}

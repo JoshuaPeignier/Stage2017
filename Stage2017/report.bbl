@@ -6,6 +6,11 @@ Parul Agarwal and H.S. Nayal.
   Theory}.
 \newblock 2015.
 
+\bibitem{BackWright97}
+Ralph-Johan Back and Joakim von Wright.
+\newblock {\em Refinement Calculus: A Systematic Introduction}.
+\newblock 1997.
+
 \bibitem{Berlekamp67}
 Elwyn~R. Berlekamp.
 \newblock {\em Factoring Polynomials Over Finite Fields}.
@@ -26,15 +31,42 @@ R.~Freivalds.
 \newblock {\em Probabilistic Machines Can Use Less Running Time}.
 \newblock 1977.
 
+\bibitem{Gierz80}
+G.~Gierz, K.H. Hofmann, K.~Keimel, J.D. Lawson, M.W. Mislove, and D.S. Scott.
+\newblock {\em A Compendium of Continuous Lattices}.
+\newblock 1980.
+
 \bibitem{Hoare61}
 C.A.R. Hoare.
 \newblock {\em Algorithm 64: Quicksort}.
 \newblock 1961.
 
+\bibitem{Holzmann97}
+Gerard~J. Holzmann.
+\newblock {\em The Model Checker Spin}.
+\newblock 1997.
+
+\bibitem{Kaminski16}
+Benjamin~Lucien Kaminski, Joost-Pieter Katoen, Christoph Matheja, and Federico
+  Olmedo.
+\newblock {\em Weakest Precondition Reasoning for Expected Run-Times of
+  Probabilistic Programs}.
+\newblock 2016.
+
+\bibitem{Loeckx87}
+Jacques Loeckx and Kurt Sieber.
+\newblock {\em The Foundations of Program Verification, 2nd Edition}.
+\newblock 1987.
+
 \bibitem{McIver05}
 Annabelle McIver and Carroll Morgan.
-\newblock {\em Abstration, Refinement and Proof for Probabilistic Systems}.
+\newblock {\em Abstraction, Refinement and Proof for Probabilistic Systems}.
 \newblock 2005.
+
+\bibitem{Moons13}
+Filip Moons.
+\newblock {\em The Scott Topology (Bachelor Thesis II)}.
+\newblock 2013.
 
 \bibitem{Bueno93}
 Rafael Morales-Bueno, Ricardo Conejo, José~Luis Pérez de~la Cruz, and
@@ -74,10 +106,26 @@ Robert.M Solovay and Volker Strassen.
 \newblock {\em A fast Monte-Carlo test for primality}.
 \newblock 1977.
 
+\bibitem{Stoltenberg94}
+V.~Stoltenberg-Hansen, I.~Lindstrom, and E.~R. Griffor.
+\newblock {\em Mathematical Theory of Domains}.
+\newblock 1994.
+
+\bibitem{Stoy77}
+Joseph~E. Stoy.
+\newblock {\em Denotational Semantics: The Scott-Strachey Approach to
+  Programming Language Theory}.
+\newblock 1977.
+
 \bibitem{Tix09}
 Regina Tix, Klaus Keimel, and Gordon Plotkin.
 \newblock {\em Semantics Domain for Combining Probability and Non-Determinism}.
 \newblock 2009.
+
+\bibitem{Winskel93}
+Glynn Winskel.
+\newblock {\em The Formal Semantics of Programming Languages}.
+\newblock 1993.
 
 \bibitem{WuChen11}
 Hengyang Wu and Yixiang Chen.

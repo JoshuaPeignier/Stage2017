@@ -4,12 +4,18 @@ The top-level auxiliary file: report.aux
 The style file: plain.bst
 Database file #1: ref1.bib
 Warning--empty publisher in Agarwal15
+Warning--empty publisher in BackWright97
 Warning--empty publisher in Berlekamp67
 Warning--empty publisher in WuChen08
 Warning--empty publisher in Dijkstra76
 Warning--empty publisher in Freivalds77
+Warning--empty publisher in Gierz80
 Warning--empty publisher in Hoare61
+Warning--empty publisher in Holzmann97
+Warning--empty publisher in Kaminski16
+Warning--empty publisher in Loeckx87
 Warning--empty publisher in McIver05
+Warning--empty publisher in Moons13
 Warning--empty publisher in Bueno93
 Warning--empty publisher in Bueno97
 Warning--empty publisher in PuriRal86
@@ -17,48 +23,51 @@ Warning--empty publisher in Rabin77
 Warning--empty publisher in Ramanathan04
 Warning--empty publisher in Shapiro09
 Warning--empty publisher in SolovayStrassen77
+Warning--empty publisher in Stoltenberg94
+Warning--empty publisher in Stoy77
 Warning--empty publisher in Tix09
+Warning--empty publisher in Winskel93
 Warning--empty publisher in WuChen11
 Warning--empty publisher in WuChen12
-You've used 17 entries,
+You've used 26 entries,
             2118 wiz_defined-function locations,
-            577 strings with 5694 characters,
-and the built_in function-call counts, 4317 in all, are:
-= -- 353
-> -- 220
+            618 strings with 6687 characters,
+and the built_in function-call counts, 6668 in all, are:
+= -- 544
+> -- 348
 < -- 0
-+ -- 92
-- -- 70
-* -- 248
-:= -- 748
-add.period$ -- 51
-call.type$ -- 17
-change.case$ -- 69
++ -- 148
+- -- 112
+* -- 389
+:= -- 1153
+add.period$ -- 78
+call.type$ -- 26
+change.case$ -- 108
 chr.to.int$ -- 0
-cite$ -- 34
-duplicate$ -- 204
-empty$ -- 375
-format.name$ -- 70
-if$ -- 878
+cite$ -- 52
+duplicate$ -- 312
+empty$ -- 573
+format.name$ -- 112
+if$ -- 1353
 int.to.chr$ -- 0
-int.to.str$ -- 17
-missing$ -- 34
-newline$ -- 88
-num.names$ -- 34
-pop$ -- 171
+int.to.str$ -- 26
+missing$ -- 52
+newline$ -- 133
+num.names$ -- 52
+pop$ -- 264
 preamble$ -- 1
-purify$ -- 69
+purify$ -- 108
 quote$ -- 0
-skip$ -- 108
+skip$ -- 164
 stack$ -- 0
-substring$ -- 90
-swap$ -- 17
+substring$ -- 140
+swap$ -- 26
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 34
-warning$ -- 17
-while$ -- 34
-width$ -- 19
-write$ -- 155
-(There were 17 warnings)
+type$ -- 52
+warning$ -- 26
+while$ -- 52
+width$ -- 28
+write$ -- 236
+(There were 26 warnings)
