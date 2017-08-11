@@ -15,6 +15,22 @@
 \definecolor{grenat}{RGB}{139,26,26}
 \definecolor{beige}{RGB}{255,255,220}
 
+\def\E {{\mathbb E}}
+\def\EE {{\mathbb E}}
+\def\FF {{\mathbb F}}
+\def\II {{\mathbb I}}
+\def\LL {{\mathbb L}}
+\def\NN {{\mathbb N}}
+\def\PP {{\mathbb P}}
+\def\RR {{\mathbb R}}
+\def\ZZ {{\mathbb Z}}
+\def\RRpos {{\mathbb R_{\geq 0}}}
+\def\RRposi {{\mathbb R_{\geq 0}^{\infty}}}
+\def\Max {\textnormal {Max}}
+\def\Min {\textnormal {Min}}
+\def\Sup {\textnormal {Sup}}
+\def\Inf {\textnormal {Inf}}
+
 \title{\textbf{Possibility Distribution Semantics for Probabilistic Programs with Nondeterminism}}
 \author{Joshua Peignier}
 \date{15th May 2017 - 11th August 2017}
@@ -140,13 +156,40 @@ $$\{ x := -1 \} \square \{x := 1\}$$
 \begin{itemize}
 \item<1-> There exists an extension for probabilistic nondeterministic programs
 \item<2-> $wp[P](\varphi)$: probability that $\varphi$ is satisfied after thee execution of $P$
+\item<3-> Problem: not possible to assign probabilities to nondeterministic choices\newline
+\onslide<4->{$\rightarrow$ Conventions must be chosen}
 \end{itemize}
 \end{frame}
-%Give an example with the program $P_1$ in the report, and with a purely nondeterministic program.
-%Explain that this semantics was extended by McIver and Morgan to probabilistic nondeterministic programs, but that this is not satisfying. Explain why.
+
+
+% Quickly talk about the demonic choice, explain that "we consider that the outcome which is realised is the least desired one
+% Explaine that the results are counterintuitive for two reasons: they violate the modularity law of probabilities, and we are missing the information that x can take the value 2 (to realise it, we must compute the wp of another postcondition)
+\begin{frame}
+\frametitle{Semantics for nondeterministic programs}
+\begin{block}{Example}
+\onslide<1->{$$P_0\textnormal{: } \{\{x := 2 \} \square \{ x := 5\} \} [p] \{x := 7\}$$}
+\begin{align*}
+\onslide<3->{wp[P_0]([x = 7]) =} & \onslide<4->{1-p} \\
+\onslide<5->{wp[P_0]([x = 2]) =} & \onslide<6->{0} \\
+\onslide<7->{wp[P_0]([x = 5]) =} & \onslide<8->{0} \\
+\onslide<9->{wp[P_0]([x = 2 \textnormal{ OR } x = 5]) =} & \onslide<10->{p} \\
+\end{align*}
+\end{block}
+\end{frame}
+
+% Explain that possibilities, as the name indicates, represent how possible an event is, not how likely it is to happen.
+\begin{frame}
+\frametitle{Possibility-based semantics}
+\begin{itemize}
+\item<1-> Idea: rather use possibility based semantics
+\item<2-> Possibility measure: $\Pi(U \cup V) = \Max(\Pi(U),\Pi(V))$
+\end{itemize}
+\end{frame}
 
 \section{The previous semantics}
 
+% Explain the idea of anticipation of values, show the problems
+% Do not detail the rules
 \begin{frame}
 \frametitle{test}
 test
@@ -154,6 +197,8 @@ test
 
 \section{Our semantics}
 
+% Show our own semantics, explain the difference : instead of anticipating values of real-valued functions, we anticipate values of set-valued functions, where the sets represent possible values
+% Apply to P_0, see how it behaves
 \begin{frame}
 \frametitle{test}
 test
@@ -161,9 +206,18 @@ test
 
 \section{Conclusion}
 
+% Explain that our rules are not proven to make sense for programs containing loops, because we need a complete partial order...
+% This is a future work
 \begin{frame}
-\frametitle{test}
-test
+\frametitle{Conclusion}
+\begin{itemize}
+\item<1-> Original problem: existing semantics for probabilistic nondeterministic programs\newline
+\onslide<2->{$\rightarrow$ Imprecise, miss information}
+\item<3-> Our idea: correct this lack of information with possibility theorey
+\item<4-> New rules, our semantics describes the behavior of some programs better than the existing semantics
+\item<5-> Main problem: not proven to be well-defined for program with rules
+\item<6-> Future work: find a complete partial order $\rightarrow$ Then, our semantics will be well-defined
+\end{itemize}
 \end{frame}
 
 \end{document}
